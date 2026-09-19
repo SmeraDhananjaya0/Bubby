@@ -10,24 +10,38 @@ writing code. `design/DESIGN.md` is the visual spec; `design/canvas/` holds the 
 ## Stack
 
 - **Expo SDK 57** · React Native 0.86 · TypeScript (strict) · `expo-router` (file routes in `app/`)
-- State: **zustand** (`src/store/useAppStore.ts`) — one store, no persistence yet
+- State: **zustand** (`src/store/useAppStore.ts`) — one store, persisted with AsyncStorage, write-through to Supabase
+- Backend: **Supabase** — Postgres + RLS, email-OTP auth, edge functions `strava-auth` / `strava-sync` / `coach` (Deno).
+  All client access goes through `src/data/repo.ts`; screens never import supabase-js.
+- Targets: iOS via **EAS Build** (`eas.json`), web as a static SPA on **Vercel** (`vercel.json`, `public/`), Android via EAS
 - Graphics: `react-native-svg` (rings, charts, ambient glows), `lucide-react-native` icons, `expo-blur` for the tab bar
 - Fonts: **Manrope** (UI + numbers) and **Instrument Serif Italic** (one editorial line per screen, max) via `@expo-google-fonts`
 - Path alias: `@/*` → `src/*`
 
 ```bash
 npm install
-npx expo start          # then i / a / w
+npx expo start          # then i / a / w   (no .env → local mode with sample data)
 npm run typecheck       # tsc --noEmit — must pass before every commit
+npm run build:web       # static export to dist/ (what Vercel runs)
+npm run build:ios:sim   # EAS dev-client build for the simulator
 ```
+
+Two runtime modes, decided by `isCloudConfigured` (`src/lib/supabase.ts`) and `userId` in the app store:
+**local** (no env, or a guest / device-only account: sample data, on-device persistence per account, the
+rule-based coach in `lib/coach.ts`) and **cloud** (a Supabase-backed account: `hydrateFromCloud()` replaces the
+sample data, onboarding builds a real plan with `lib/plan.ts` → `repo.savePlan()`, the coach is the `coach` edge
+function, and every mutating action also writes to Supabase via `swallow(repo.…)` so a failed write never breaks
+the UI). `useAuthStore` is the identity (`User`); `useAuth()` maps a Supabase session onto it. Keep both modes working.
 
 ## Repo map
 
 ```
 app/                          # routes (expo-router)
-  _layout.tsx                 # fonts, splash, root Stack
-  index.tsx                   # → onboarding or tabs
+  _layout.tsx                 # fonts, splash, useAuth(), root Stack
+  index.tsx                   # → sign-in (cloud, signed out) / onboarding / tabs
+  (auth)/sign-in.tsx          # Google (Supabase OAuth) · email → six-digit code · guest (device only)
   (onboarding)/               # welcome → connected → about-you → goal → plan-preview
+  settings.tsx                # account, profile/race shortcuts, reset, sign out
   (tabs)/                     # today · plan · log · coach  (custom FloatingTabBar)
   nutrients.tsx               # pushed from Log
   plan-updated.tsx            # modal: a run synced from Strava changed the plan
@@ -36,11 +50,29 @@ src/
   theme/tokens.ts             # colors, hues, radii, spacing, shadows, type scale, ambient presets  ← the design system
   components/                 # Screen, Header, Card, Button, Chip, Stat, Bar, Rings, WeekBars, BlockChart, TrendChart, …
   features/today/             # the cards that compose the home screen
-  store/useAppStore.ts        # app state + selectors
+  store/useAppStore.ts        # app state + selectors (persist, per-account snapshots, cloud write-through)
+  store/useAuthStore.ts       # who is signed in (User); cloud accounts carry `cloudId`
+  data/repo.ts                # the ONLY Supabase access layer: DB rows ↔ app types, rpc, edge-function calls, savePlan()
+  data/sample.ts              # sample data mirroring the design canvas (local mode)
+  lib/supabase.ts             # client + isCloudConfigured + callFunction()
+  lib/useAuth.ts              # Supabase session ↔ useAuthStore/useAppStore; sendCode / verifyCode / signInWithGoogle
+  lib/google.ts               # expo-auth-session Google (local mode only; cloud uses Supabase OAuth)
+  lib/coach.ts                # local rule-based coach — the fallback when the coach function isn't reachable
+  lib/plan.ts                 # plan builder v0: goal + profile → periodized block of daily sessions (pure)
+  lib/strava.ts               # expo-auth-session flow → strava-auth function
+  lib/storage.ts              # AsyncStorage adapter for zustand persist
+  lib/health.ts               # Apple Health adapter (iOS; native module loaded lazily)
+  lib/database.types.ts       # Database type (hand-condensed; regenerate with supabase gen types)
   lib/fuel.ts                 # the fuel engine: targets, protocol, sums
   lib/format.ts               # dates, numbers, pace math
-  data/sample.ts              # sample data mirroring the design canvas
   types.ts
+supabase/
+  schema.sql                  # full schema of the live project (fresh-project bootstrap)
+  migrations/                 # 0005_nutrition, 0006_nutrition_hardening (0001–0004 predate this repo)
+  functions/                  # strava-auth · strava-sync · coach   (Deno; excluded from tsc)
+  README.md                   # secrets, deploy, auth setup
+assets/                       # icon, adaptive icon, splash mark, favicon (generated; see design tokens)
+public/                       # web shell: index.html template, manifest.json, icons
 design/
   DESIGN.md                   # visual spec + screen map
   canvas/                     # the 18 wireframe artboards (.dc.html) + canvas.json — source of truth for layout
@@ -70,11 +102,18 @@ design/
 
 ## State & data flow
 
-- `useAppStore` holds: race, profile, the current week (`DayPlan[]`), today's index, meals, run-fuel counts,
-  supplements taken, water, the Plan-tab suggestion state, and whether the Coach's plan change was applied.
+- `useAppStore` holds, per account (`hydrateForUser` swaps snapshots): race, profile, the current week (`DayPlan[]`),
+  today's index, meals, custom foods, run-fuel counts, supplements taken, water, the Plan-tab suggestion state and
+  the coach thread (`chat: ChatMessage[]` with `CoachProposal`s). Transient: `userId`, `cloudReady`, `coachBusy`.
+- Coach proposals are one contract for both coaches: `changes` (what the UI strikes through) + either `apply`
+  (local patches) or `cloudIds` (rows in `proposals`, applied by `decide_proposal`). Nothing mutates until approved.
 - `targetsFor(day, profile)` → `{kcal, carbs, protein, fat}`. `protocolFor(day)` → before/during/after + carry list.
+  The same engine is duplicated in `supabase/functions/strava-sync` (Deno) — change both or neither.
 - Screens compute derived values in render (cheap) — keep it that way until there's a perf reason not to.
-- No persistence yet. First real task in that area: wrap the store with `zustand/middleware` `persist` + AsyncStorage.
+- Cloud writes are fire-and-forget through `swallow()`; reads happen once in `hydrateFromCloud()` and after
+  `applyCoachProposals()`. Proposals are applied server-side by `decide_proposal()` — never mutate sessions directly.
+- Database rules: RLS own-rows on every table; `integration_tokens` is unreadable by clients (service role only,
+  AES-GCM encrypted); new tables get a `payload jsonb` column and a migration file, then regenerate types.
 
 ## Screen map (design canvas → code)
 
@@ -106,21 +145,30 @@ design/
 
 ## Roadmap (in order)
 
-1. **Persistence** — `persist` middleware; onboarding completion, profile, race and logs survive restarts.
-2. **Strava OAuth + activity sync** — `expo-auth-session`; map activities → `DayPlan.done`, trigger `plan-updated`
-   when a synced run differs from the plan (HR / duration / distance thresholds live in `lib/fuel.ts`).
-3. **Apple Health** — read workouts + HR (HealthKit via a config plugin), write nutrition; iOS only, gate by platform.
-4. **Fuel engine v1** — replace the per-mile constants with HR-load–based fitness/fatigue (the "Training model"
+Done: persistence · accounts (Google / email code / guest) · Supabase schema + auth · plan builder v0 · Strava OAuth +
+sync (edge function) · coach with structured proposals (Claude function + local fallback) · iOS build config ·
+web export + Vercel config · custom foods + search on Log · Settings.
+
+1. **Ship it** — `eas init` + first simulator build; import the repo on Vercel; set edge-function secrets;
+   enable email OTP (+ Google provider). Then dogfood a full week in cloud mode and fix what hurts.
+2. **Plan v1** — `lib/plan.ts` is deterministic and explainable but blind to history: seed `currentWeeklyMiles`
+   from Strava/Health once connected, and let the coach function re-plan whole weeks (not just single sessions).
+3. **Apple Health** — install the HealthKit module, implement `readRecentRuns()` in `lib/health.ts`, and feed it
+   through the same match/deviation path as Strava (share the code in `strava-sync`, rename to `activity-sync`).
+4. **Scheduled sync + pushes** — nightly `strava-sync` per user (pg_cron/net or Supabase cron), morning recap
+   (`recap.tsx`) and post-run `plan-updated` as pushes (`expo-notifications`).
+5. **Fuel engine v1** — replace the per-mile constants with HR-load–based fitness/fatigue (the "Training model"
    box in `design/product-flow.pdf`); keep targets explainable (the coach should be able to say *why*).
-5. **Coach** — real LLM backend behind the composer. Proposals must arrive as structured `PlanChange[]` the UI
-   renders in the strike-through list; the user approves; only then does the store mutate. Log every proposal +
-   outcome (this becomes the eval set for grading the adaptation engine).
+   Every proposal + outcome is already logged in `proposals` — that's the eval set.
 6. **Food search / photo logging** — the search field and camera button on Log are wired to nothing yet.
-7. **Notifications** — morning recap (`recap.tsx`) and post-run `plan-updated` as pushes.
+7. **Tests** — Playwright smoke on the web export (the flow in `design/screens/` is the script), Vitest on `lib/fuel.ts`.
 
 ## Things to keep in mind
 
-- The web build works (`npx expo export --platform web`) and is how `design/screens/` was captured — useful for
-  fast visual checks without a simulator. Native is the target.
+- The web build works (`npm run build:web`) and is how `design/screens/` was captured — useful for fast visual
+  checks without a simulator. Serve `dist/` with an SPA fallback (Vercel does via `vercel.json`).
+- `EXPO_PUBLIC_*` values are inlined by Metro and cached: after changing them run `expo start --clear` / `expo export --clear`.
+- `src/lib/health.ts` requires its native module through a variable so Metro doesn't resolve it at bundle time; keep that.
+- Edge functions are Deno; they're excluded from `tsc` (see `tsconfig.json`). Deploy with `npm run functions:deploy`.
 - SVG gradient ids are made unique with `useId()` because several screens stay mounted; keep doing that.
 - The floating tab bar is a custom `tabBar` on `expo-router` Tabs; the "+" circle routes to Log with `?add=1`.

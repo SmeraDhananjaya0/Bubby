@@ -1,0 +1,40 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "22.14.0",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vekgulejexranhdhecdp.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_fOPjo3c3G2zk6dsa-KKFjQ_fCYPmC25"
+      }
+    },
+    "simulator": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "channel": "development"
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development"
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "channel": "preview"
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "channel": "production"
+    }
+  }
+}

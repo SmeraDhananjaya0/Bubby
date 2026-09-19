@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ArrowRight, Check, Sparkles } from 'lucide-react-native';
 import { Button, Card, Chip, Header, IconCircle, Screen, Txt } from '@/components';
 import { useAppStore } from '@/store/useAppStore';
@@ -68,12 +68,13 @@ function Bubble({ message }: { message: ChatMessage }) {
 export default function Coach() {
   const chat = useAppStore((s) => s.chat);
   const send = useAppStore((s) => s.sendCoachMessage);
+  const busy = useAppStore((s) => s.coachBusy);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   const onSend = () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || busy) return;
     send(text);
     setDraft('');
   };
@@ -105,10 +106,10 @@ export default function Coach() {
             accessibilityRole="button"
             accessibilityLabel="Send"
             onPress={onSend}
-            disabled={!draft.trim()}
-            style={[styles.send, !draft.trim() && { opacity: 0.4 }]}
+            disabled={!draft.trim() || busy}
+            style={[styles.send, (!draft.trim() || busy) && { opacity: 0.4 }]}
           >
-            <ArrowRight size={20} color={colors.white} strokeWidth={2.6} />
+            {busy ? <ActivityIndicator color={colors.white} /> : <ArrowRight size={20} color={colors.white} strokeWidth={2.6} />}
           </Pressable>
         </View>
       }
@@ -117,6 +118,12 @@ export default function Coach() {
       {chat.map((m) => (
         <Bubble key={m.id} message={m} />
       ))}
+      {busy ? (
+        <View style={styles.coachRow}>
+          <IconCircle icon={Sparkles} hue={hues.violet} size={28} iconSize={14} />
+          <Txt v="bodyMuted" style={{ paddingTop: 3 }}>Thinking…</Txt>
+        </View>
+      ) : null}
     </Screen>
   );
 }

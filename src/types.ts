@@ -79,6 +79,8 @@ export type CoachProposal = {
   apply: { dow: string; patch: Partial<DayPlan> }[];
   /** Optional caution shown under the proposal. */
   caution?: string;
+  /** Set when the proposal lives in the database (signed-in mode): applied via `decide_proposal`. */
+  cloudIds?: string[];
 };
 
 export type ChatMessage = {
@@ -99,4 +101,6 @@ export type User = {
   email: string;
   photo?: string;
   provider: 'google' | 'email' | 'guest';
+  /** Supabase auth user id when this account is backed by the cloud; absent for local/guest accounts. */
+  cloudId?: string;
 };

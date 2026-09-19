@@ -130,7 +130,7 @@ export default function Log() {
               key={f.label}
               size="md"
               hue={hues.amber}
-              onPress={() => addRunFuel(f.label)}
+              onPress={() => addRunFuel(f.label, { kcal: f.kcal, carbs: f.carbs })}
               icon={<Plus size={12} color={hues.amber.text} strokeWidth={2.8} />}
               label={`${f.label}  ${f.sub}`}
               accessibilityLabel={`Log ${f.label}`}

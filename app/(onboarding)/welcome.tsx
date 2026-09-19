@@ -1,12 +1,23 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Heart, Link2 } from 'lucide-react-native';
 import { Button, Chip, Rings, Screen, Txt } from '@/components';
 import { colors, fonts, macroHue } from '@/theme/tokens';
+import { useStravaConnect } from '@/lib/strava';
+import { healthStatus, requestHealthAccess } from '@/lib/health';
 
 export default function Welcome() {
   const router = useRouter();
+  const strava = useStravaConnect(() => router.push('/(onboarding)/connected'));
+  const [healthNote, setHealthNote] = React.useState<string | null>(null);
+  const connectHealth = async () => {
+    const status = await healthStatus();
+    if (status === 'ready' && (await requestHealthAccess())) return router.push({ pathname: '/(onboarding)/connected', params: { via: 'health' } });
+    if (Platform.OS === 'ios') setHealthNote('Apple Health needs the native build (see src/lib/health.ts). Continuing without it for now.');
+    else setHealthNote('Apple Health is available in the iPhone app. Continuing without it for now.');
+    router.push('/(onboarding)/connected');
+  };
   return (
     <Screen
       ambient="onboarding"
@@ -16,19 +27,19 @@ export default function Welcome() {
         <>
           <Button
             variant="cta"
-            label="Connect Strava"
+            label={strava.busy ? 'Connecting…' : 'Connect Strava'}
             icon={<Link2 size={16} color={colors.white} strokeWidth={2.4} />}
-            onPress={() => router.push('/(onboarding)/connected')}
+            onPress={() => (strava.ready ? strava.connect() : router.push('/(onboarding)/connected'))}
           />
           <Button
             variant="ctaSecondary"
             label="Connect Apple Health"
             icon={<Heart size={16} color={colors.ink} strokeWidth={2.4} />}
             iconRight={<Chip label="iPhone" />}
-            onPress={() => router.push('/(onboarding)/connected')}
+            onPress={connectHealth}
           />
           <Txt v="caption" style={styles.center}>
-            We read runs, heart rate and pace from Strava or Apple Health. Nothing is ever posted for you.
+            {strava.error ?? healthNote ?? 'We read runs, heart rate and pace from Strava or Apple Health. Nothing is ever posted for you.'}
           </Txt>
           <Button variant="ghost" label="Skip for now" onPress={() => router.push('/(onboarding)/about-you')} style={{ marginTop: -4 }} />
         </>

@@ -1,0 +1,11 @@
+# Supabase CLI config. Link once with:  supabase link --project-ref vekgulejexranhdhecdp
+project_id = "bubbie"
+
+[functions.strava-auth]
+verify_jwt = true
+
+[functions.strava-sync]
+verify_jwt = true
+
+[functions.coach]
+verify_jwt = true

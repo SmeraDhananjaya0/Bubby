@@ -29,10 +29,12 @@ export default function Settings() {
   const hasRace = useAppStore((s) => s.hasRace);
   const reset = useAppStore((s) => s.reset);
 
-  const providerLabel = user?.provider === 'google' ? 'Google account' : user?.provider === 'email' ? 'Email account' : 'Guest — not saved to an account';
+  const providerLabel = user?.cloudId
+    ? `${user.provider === 'google' ? 'Google' : 'Email'} account · synced`
+    : user?.provider === 'google' ? 'Google account (this device)' : user?.provider === 'email' ? 'Email account (this device)' : 'Guest — not saved to an account';
 
   const onSignOut = () => {
-    Alert.alert('Sign out?', 'Your data stays on this device and comes back when you sign in again.', [
+    Alert.alert('Sign out?', user?.cloudId ? 'Your data is saved to your account and comes back when you sign in again.' : 'Your data stays on this device and comes back when you sign in again.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => { signOut(); router.replace('/'); } },
     ]);

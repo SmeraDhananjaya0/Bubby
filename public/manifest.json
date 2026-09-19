@@ -1,0 +1,14 @@
+{
+  "name": "Bubbie",
+  "short_name": "Bubbie",
+  "description": "Marathon training where fuel follows the workout.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F5F1",
+  "theme_color": "#F6F5F1",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

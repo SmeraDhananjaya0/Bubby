@@ -35,6 +35,7 @@ export default function AboutYou() {
   const router = useRouter();
   const profile = useAppStore((s) => s.profile);
   const setProfile = useAppStore((s) => s.setProfile);
+  const onboarded = useAppStore((s) => s.onboarded);
   const [feet, setFeet] = useState(String(Math.floor(profile.heightIn / 12)));
   const [inches, setInches] = useState(String(profile.heightIn % 12));
 
@@ -44,7 +45,7 @@ export default function AboutYou() {
   };
 
   return (
-    <Screen ambient="onboarding" bottomPad={130} footer={<Button variant="cta" label="Continue" onPress={() => router.push('/(onboarding)/goal')} />}>
+    <Screen ambient="onboarding" bottomPad={130} footer={<Button variant="cta" label={onboarded ? 'Done' : 'Continue'} onPress={() => (onboarded ? router.back() : router.push('/(onboarding)/goal'))} />}>
       <StepIndicator step={2} />
       <View style={{ gap: 4, marginBottom: 6 }}>
         <Txt v="eyebrow">Step 2 of 4</Txt>

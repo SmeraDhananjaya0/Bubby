@@ -13,6 +13,7 @@ import {
 import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from '@/theme/tokens';
+import { useAuth } from '@/lib/useAuth';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -26,11 +27,13 @@ export default function RootLayout() {
     InstrumentSerif_400Regular_Italic,
   });
 
-  useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync().catch(() => {});
-  }, [loaded, error]);
+  const { ready } = useAuth();
 
-  if (!loaded && !error) return null;
+  useEffect(() => {
+    if ((loaded || error) && ready) SplashScreen.hideAsync().catch(() => {});
+  }, [loaded, error, ready]);
+
+  if ((!loaded && !error) || !ready) return null;
 
   return (
     <SafeAreaProvider>

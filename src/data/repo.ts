@@ -1,0 +1,268 @@
+/**
+ * Repo — the only file that knows the database shape. Screens and the store
+ * talk in app types (`src/types.ts`); this file translates to and from rows.
+ *
+ * Every function is a no-op-safe async call: when the cloud isn't configured
+ * or the user isn't signed in, callers simply don't call these (see the store).
+ */
+import { callFunction, supabase } from '@/lib/supabase';
+import { targetsFor } from '@/lib/fuel';
+import type { Tables, TablesInsert } from '@/lib/database.types';
+import type { DayPlan, Macros, Meal, PlanChange, Profile, Race, WorkoutType } from '@/types';
+import { buildPlan, type PlanBlock } from '@/lib/plan';
+
+const TZ = 'America/New_York';
+export const todayISO = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: TZ });
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ---------------------------------------------------------------- profile
+export function rowToProfile(r: Tables<'profiles'>): Profile {
+  return {
+    age: r.age ?? 29,
+    sex: (r.sex as Profile['sex']) ?? '',
+    heightIn: Number(r.height_in ?? 69),
+    weightLb: Number(r.weight_lb ?? 160),
+    diet: r.diet ?? '',
+    runDaysPerWeek: r.run_days_per_week ?? 5,
+  };
+}
+
+export async function loadProfile(userId: string) {
+  const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+  return data ? { profile: rowToProfile(data), onboarded: !!data.onboarded_at } : null;
+}
+
+export async function saveProfile(userId: string, p: Partial<Profile>, extra: { onboarded?: boolean } = {}) {
+  const patch: Partial<TablesInsert<'profiles'>> = { updated_at: new Date().toISOString() };
+  if (p.age != null) patch.age = p.age;
+  if (p.sex != null) patch.sex = p.sex || null;
+  if (p.heightIn != null) patch.height_in = p.heightIn;
+  if (p.weightLb != null) patch.weight_lb = p.weightLb;
+  if (p.diet != null) patch.diet = p.diet;
+  if (p.runDaysPerWeek != null) patch.run_days_per_week = p.runDaysPerWeek;
+  if (extra.onboarded) patch.onboarded_at = new Date().toISOString();
+  await supabase.from('profiles').update(patch).eq('id', userId);
+}
+
+// ---------------------------------------------------------------- race / block
+const DIST_MILES: Record<Race['distance'], number> = { '5K': 3.1, '10K': 6.2, Half: 13.1, Marathon: 26.2 };
+
+export async function loadRace(userId: string): Promise<Race | null> {
+  const [{ data: goal }, { data: block }] = await Promise.all([
+    supabase.from('goals').select('*').eq('user_id', userId).order('date').limit(1).maybeSingle(),
+    supabase.from('blocks').select('*').eq('user_id', userId).limit(1).maybeSingle(),
+  ]);
+  if (!goal) return null;
+  const payload = (goal.payload ?? {}) as { distance?: Race['distance'] };
+  const distance: Race['distance'] = payload.distance ?? (/half/i.test(goal.name) ? 'Half' : /10k/i.test(goal.name) ? '10K' : /5k/i.test(goal.name) ? '5K' : 'Marathon');
+  const secs = goal.target_seconds;
+  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
+  return {
+    name: goal.name,
+    distance,
+    miles: DIST_MILES[distance],
+    date: goal.date,
+    goalTime: h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`,
+    totalWeeks: block?.total_weeks ?? 11,
+    currentWeek: block?.week ?? 1,
+    phase: block?.phase ? block.phase[0] + block.phase.slice(1).toLowerCase() : 'Base',
+  };
+}
+
+export async function saveRace(userId: string, race: Race) {
+  const parts = race.goalTime.split(':').map(Number);
+  const target_seconds = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts[0] * 60 + parts[1];
+  await supabase.from('goals').upsert({
+    id: `${userId}-goal`,
+    user_id: userId,
+    name: race.name,
+    date: race.date,
+    target_seconds,
+    payload: { distance: race.distance },
+  });
+}
+
+/**
+ * Build and store a training block for the user's goal. Replaces any existing plan
+ * (sessions from today onward) so re-running onboarding or changing the race is safe.
+ * Returns the block so callers can show it immediately.
+ */
+export async function savePlan(userId: string, race: Race, profile: Profile, opts: { currentWeeklyMiles?: number } = {}): Promise<PlanBlock> {
+  const plan = buildPlan({ userId, race, profile, currentWeeklyMiles: opts.currentWeeklyMiles });
+  const today = todayISO();
+  // Keep history: only sessions from today forward are replaced.
+  await supabase.from('planned_sessions').delete().eq('user_id', userId).gte('date', today);
+  const rows = plan.sessions
+    .filter((s) => s.date >= today)
+    .map((s) => ({ id: s.id, user_id: userId, date: s.date, title: s.title, type: s.type, detail: s.detail, structure: [], status: 'planned', provenance: 'original', payload: s.payload }));
+  for (let i = 0; i < rows.length; i += 200) {
+    const { error } = await supabase.from('planned_sessions').upsert(rows.slice(i, i + 200), { onConflict: 'user_id,id' });
+    if (error) throw error;
+  }
+  await supabase.from('blocks').upsert({
+    id: `${userId}-block`,
+    user_id: userId,
+    label: plan.label,
+    phase: plan.phase,
+    week: plan.week,
+    total_weeks: plan.total_weeks,
+    periodization: plan.periodization,
+    payload: { goalId: `${userId}-goal`, engine: 'plan-v0' },
+  });
+  return plan;
+}
+
+// ---------------------------------------------------------------- week
+export function normType(t: string): WorkoutType {
+  const s = (t || '').toLowerCase();
+  if (s.includes('long')) return 'long';
+  if (s.includes('interval') || s.includes('speed') || s.includes('track') || s.includes('rep')) return 'intervals';
+  if (s.includes('tempo') || s.includes('threshold')) return 'tempo';
+  if (s.includes('recovery')) return 'recovery';
+  if (s.includes('rest') || s.includes('off')) return 'rest';
+  return 'easy';
+}
+
+const fmtPace = (secPerMi: number) => `${Math.floor(secPerMi / 60)}:${String(Math.round(secPerMi % 60)).padStart(2, '0')}`;
+
+/** Monday-first week containing `day`, from planned_sessions (+ matched activities). */
+export async function loadWeek(userId: string, day = todayISO()): Promise<{ week: DayPlan[]; todayIndex: number }> {
+  const d = new Date(day + 'T00:00:00');
+  const dow = d.getDay(); // 0 Sun
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - ((dow + 6) % 7));
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(monday);
+    x.setDate(monday.getDate() + i);
+    return x.toLocaleDateString('en-CA');
+  });
+  const [{ data: sessions }, { data: acts }] = await Promise.all([
+    supabase.from('planned_sessions').select('*').eq('user_id', userId).in('date', dates),
+    supabase.from('activities').select('matched_session_id, distance_m, moving_sec, avg_pace_sec_per_mi').eq('user_id', userId).gte('started_at', dates[0]).lte('started_at', dates[6] + 'T23:59:59'),
+  ]);
+  const week: DayPlan[] = dates.map((date) => {
+    const s = (sessions ?? []).find((x) => x.date === date);
+    const dt = new Date(date + 'T00:00:00');
+    if (!s) return { dow: DOW[dt.getDay()], date: dt.getDate(), type: 'rest', title: 'Rest', miles: 0, note: 'Nothing planned. Rest or easy movement.' };
+    const p = (s.payload ?? {}) as { distanceMi?: number; paceTarget?: string; zone?: string; time?: string; fuel?: string };
+    const act = (acts ?? []).find((a) => a.matched_session_id === s.id);
+    const done =
+      act && act.distance_m
+        ? `${(act.distance_m / 1609.344).toFixed(1)} mi · ${Math.floor((act.moving_sec ?? 0) / 60)}:${String((act.moving_sec ?? 0) % 60).padStart(2, '0')} · ${act.avg_pace_sec_per_mi ? fmtPace(Number(act.avg_pace_sec_per_mi)) : '—'} /mi`
+        : s.status === 'done'
+          ? 'Completed'
+          : undefined;
+    return {
+      dow: DOW[dt.getDay()],
+      date: dt.getDate(),
+      type: normType(s.type),
+      title: s.title,
+      miles: Number(p.distanceMi ?? 0),
+      pace: p.paceTarget,
+      effort: p.zone,
+      note: s.detail ?? '',
+      fuel: p.fuel,
+      time: p.time,
+      done,
+    };
+  });
+  return { week, todayIndex: Math.max(0, dates.indexOf(day)) };
+}
+
+// ---------------------------------------------------------------- nutrition
+export function rowToMeal(r: Tables<'meals'>): Meal {
+  return {
+    id: r.id,
+    name: r.slot,
+    desc: r.description,
+    time: new Date(r.eaten_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ }),
+    kcal: r.kcal,
+    carbs: Number(r.carbs_g),
+    protein: Number(r.protein_g),
+    fat: Number(r.fat_g),
+  };
+}
+
+export async function loadNutrition(userId: string, day = todayISO()) {
+  const [{ data: meals }, { data: supps }, { data: water }] = await Promise.all([
+    supabase.from('meals').select('*').eq('user_id', userId).eq('day', day).order('eaten_at'),
+    supabase.from('supplement_logs').select('name').eq('user_id', userId).eq('day', day),
+    supabase.from('hydration_logs').select('ml').eq('user_id', userId).eq('day', day),
+  ]);
+  return {
+    meals: (meals ?? []).map(rowToMeal),
+    supplements: Object.fromEntries((supps ?? []).map((s) => [s.name, true])) as Record<string, boolean>,
+    water: (water ?? []).reduce((a, b) => a + b.ml, 0) / 1000,
+  };
+}
+
+export async function insertMeal(userId: string, m: Omit<Meal, 'id' | 'time'>, kind: 'meal' | 'run_fuel' = 'meal', source = 'quick_add') {
+  const { data } = await supabase
+    .from('meals')
+    .insert({ user_id: userId, slot: m.name, description: m.desc, kcal: m.kcal, carbs_g: m.carbs, protein_g: m.protein, fat_g: m.fat, kind, source, day: todayISO() })
+    .select('*')
+    .single();
+  return data ? rowToMeal(data) : null;
+}
+
+export const deleteMeal = (userId: string, id: string) => supabase.from('meals').delete().eq('user_id', userId).eq('id', id);
+
+export async function setSupplement(userId: string, name: string, on: boolean, dose?: string) {
+  const day = todayISO();
+  if (on) await supabase.from('supplement_logs').upsert({ user_id: userId, day, name, dose });
+  else await supabase.from('supplement_logs').delete().eq('user_id', userId).eq('day', day).eq('name', name);
+}
+
+export const logWater = (userId: string, litres: number) =>
+  supabase.from('hydration_logs').insert({ user_id: userId, ml: Math.round(litres * 1000), day: todayISO() });
+
+/** Persist what the engine decided for today so "we added +520 kcal" is an honest diff. */
+export async function saveDailyTargets(userId: string, day: DayPlan, profile: Profile, reason: string) {
+  const t: Macros = targetsFor(day, profile);
+  await supabase.from('daily_targets').upsert({
+    user_id: userId,
+    day: todayISO(),
+    kcal: t.kcal,
+    carbs_g: t.carbs,
+    protein_g: t.protein,
+    fat_g: t.fat,
+    reason,
+    engine_version: 'v0',
+  });
+}
+
+// ---------------------------------------------------------------- proposals / coach
+export type OpenProposal = { id: string; scope: string; from: string; to: string; day?: string; summary?: string; added?: { kcal: number; carbs_g: number; sodium_mg: number } };
+
+export async function loadOpenProposals(userId: string): Promise<OpenProposal[]> {
+  const { data } = await supabase.from('proposals').select('*').eq('user_id', userId).eq('status', 'proposed');
+  return (data ?? []).map((p) => {
+    const pl = (p.payload ?? {}) as Record<string, unknown>;
+    const after = (pl.after ?? {}) as Record<string, unknown>;
+    return {
+      id: p.id,
+      scope: p.scope,
+      from: String(pl.from ?? pl.planned ?? ''),
+      to: String(pl.to ?? pl.headline ?? ''),
+      day: after.date ? String(after.date) : undefined,
+      summary: pl.summary ? String(pl.summary) : undefined,
+      added: pl.added as OpenProposal['added'],
+    };
+  });
+}
+
+export async function decideProposal(id: string, decision: 'accepted' | 'dismissed') {
+  const { error } = await supabase.rpc('decide_proposal', { p_id: id, p_decision: decision });
+  if (error) throw error;
+}
+
+export type CoachReply = { reply: string; proposals: (PlanChange & { id: string })[]; summary: string | null; fuel: { kcal: number; carbs_g: number; protein_g: number } | null };
+
+export async function askCoach(message: string): Promise<CoachReply> {
+  const out = await callFunction<{ reply: string; proposals: { id: string; day: string; from: string; to: string }[]; summary: string | null; fuel: CoachReply['fuel'] }>('coach', { message });
+  return { ...out, proposals: out.proposals.map((p) => ({ ...p, day: p.day })) };
+}
+
+export const syncStrava = () => callFunction<{ synced: number; matched: number; proposals: string[] }>('strava-sync');
+export const connectStrava = (code: string, redirect_uri: string) => callFunction<{ athlete: { id: number; firstname: string } }>('strava-auth', { code, redirect_uri });
+export const connectedProviders = async () => (await supabase.rpc('connected_providers')).data ?? [];

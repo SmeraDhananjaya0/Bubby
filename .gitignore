@@ -22,3 +22,7 @@ npm-debug.*
 *.key
 *.mobileprovision
 .env*.local
+
+# local env
+.env
+.env.local

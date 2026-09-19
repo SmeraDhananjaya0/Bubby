@@ -5,11 +5,15 @@
  * store keeps a separate snapshot of training + nutrition data per user id
  * (see `hydrateForUser` in useAppStore). Sign out leaves that data on the
  * device so the same person picks up where they left off next time.
+ *
+ * Cloud-backed accounts (`user.cloudId`) are created by `src/lib/useAuth.ts` from the Supabase
+ * session; signing one out also ends that session.
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { zustandStorage } from '@/lib/storage';
 import { useAppStore } from '@/store/useAppStore';
+import { isCloudConfigured, supabase } from '@/lib/supabase';
 import type { User } from '@/types';
 
 type AuthState = {
@@ -43,7 +47,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ user: guest });
       },
 
-      signOut: () => set({ user: null }),
+      signOut: () => {
+        const u = get().user;
+        if (u?.cloudId && isCloudConfigured) void supabase.auth.signOut().catch(() => {});
+        useAppStore.getState().setCloudUser(null);
+        set({ user: null });
+      },
 
       updateUser: (patch) => set((s) => (s.user ? { user: { ...s.user, ...patch } } : s)),
 
