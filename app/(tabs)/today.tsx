@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import { Avatar, Header, Screen } from '@/components';
 import { useAppStore } from '@/store/useAppStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { todayLabel } from '@/lib/format';
 import { NoRaceNudge, RaceCard } from '@/features/today/RaceCard';
 import { FuelTodayCard } from '@/features/today/FuelTodayCard';
@@ -21,10 +22,11 @@ export default function Today() {
   const week = useAppStore((s) => s.week);
   const todayIndex = useAppStore((s) => s.todayIndex);
   const todayDone = useAppStore((s) => s.todayDone);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <Screen ambient="today">
-      <Header eyebrow={todayLabel()} title="Today" right={<Avatar onPress={() => router.push('/(onboarding)/about-you')} />} />
+      <Header eyebrow={todayLabel()} title="Today" right={<Avatar name={user?.name} photo={user?.photo} onPress={() => router.push('/settings')} />} />
       {hasRace ? (
         <>
           <RaceCard />

@@ -38,10 +38,19 @@
         {
           "backgroundColor": "#F6F5F1"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "google": {
+        "expoClientId": "",
+        "iosClientId": "",
+        "androidClientId": "",
+        "webClientId": ""
+      }
     }
   }
 }

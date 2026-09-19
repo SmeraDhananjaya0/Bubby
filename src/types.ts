@@ -63,4 +63,40 @@ export type Profile = {
 
 export type ChatRole = 'coach' | 'you';
 
+/** A single proposed edit shown in the coach's strike-through list. */
 export type PlanChange = { day: string; from: string; to: string };
+
+/**
+ * A structured proposal the coach attaches to a message. The UI renders the
+ * `changes` list; only when the user approves do we mutate the plan via `apply`.
+ * This mirrors the eventual LLM contract (see CLAUDE.md → Roadmap #5).
+ */
+export type CoachProposal = {
+  id: string;
+  title: string;
+  changes: PlanChange[];
+  /** Which workout days to overwrite, and how. Applied on approval. */
+  apply: { dow: string; patch: Partial<DayPlan> }[];
+  /** Optional caution shown under the proposal. */
+  caution?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  role: ChatRole;
+  text: string;
+  /** ms epoch. */
+  at: number;
+  proposal?: CoachProposal;
+  /** Set once the user acts on an attached proposal. */
+  proposalStatus?: 'applied' | 'dismissed';
+};
+
+/** A signed-in person. `provider` records how they authenticated. */
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  photo?: string;
+  provider: 'google' | 'email' | 'guest';
+};

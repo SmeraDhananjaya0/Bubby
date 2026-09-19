@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card, Screen, SegmentedControl, StepIndicator, Txt } from '@/components';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, fonts } from '@/theme/tokens';
 
-function Field({ label, value, onChange, keyboard }: { label: string; value: string; onChange: (v: string) => void; keyboard?: 'numeric' }) {
+/** A right-aligned numeric field with a fixed unit suffix. Keeps its own text
+ *  state so typing (and clearing) feels natural, committing numbers upward. */
+function NumberField({ label, value, unit, onCommit, width = 90 }: { label: string; value: number; unit?: string; onCommit: (n: number) => void; width?: number }) {
+  const [text, setText] = useState(String(value));
   return (
     <View style={styles.row}>
       <Txt style={styles.label}>{label}</Txt>
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        keyboardType={keyboard}
-        accessibilityLabel={label}
-        style={styles.input}
-        selectionColor={colors.accent.fill}
-      />
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+        <TextInput
+          value={text}
+          onChangeText={(t) => {
+            const clean = t.replace(/[^0-9]/g, '');
+            setText(clean);
+            if (clean) onCommit(Number(clean));
+          }}
+          keyboardType="numeric"
+          accessibilityLabel={label}
+          style={[styles.input, { minWidth: width }]}
+          selectionColor={colors.accent.fill}
+        />
+        {unit ? <Txt style={styles.unit}>{unit}</Txt> : null}
+      </View>
     </View>
   );
 }
@@ -25,8 +35,13 @@ export default function AboutYou() {
   const router = useRouter();
   const profile = useAppStore((s) => s.profile);
   const setProfile = useAppStore((s) => s.setProfile);
-  const feet = Math.floor(profile.heightIn / 12);
-  const inches = profile.heightIn % 12;
+  const [feet, setFeet] = useState(String(Math.floor(profile.heightIn / 12)));
+  const [inches, setInches] = useState(String(profile.heightIn % 12));
+
+  const commitHeight = (f: string, i: string) => {
+    const total = (Number(f) || 0) * 12 + (Number(i) || 0);
+    if (total > 0) setProfile({ heightIn: total });
+  };
 
   return (
     <Screen ambient="onboarding" bottomPad={130} footer={<Button variant="cta" label="Continue" onPress={() => router.push('/(onboarding)/goal')} />}>
@@ -37,7 +52,7 @@ export default function AboutYou() {
       </View>
 
       <Card gap={0} style={{ paddingTop: 6, paddingBottom: 6 }}>
-        <Field label="Age" value={String(profile.age)} keyboard="numeric" onChange={(v) => setProfile({ age: Number(v) || 0 })} />
+        <NumberField label="Age" value={profile.age} onCommit={(age) => setProfile({ age })} width={60} />
         <View style={styles.row}>
           <Txt style={styles.label}>Sex</Txt>
           <SegmentedControl
@@ -51,8 +66,30 @@ export default function AboutYou() {
             onChange={(sex) => setProfile({ sex })}
           />
         </View>
-        <Field label="Height" value={`${feet} ft ${inches} in`} onChange={() => {}} />
-        <Field label="Weight" value={`${profile.weightLb} lb`} onChange={(v) => setProfile({ weightLb: parseInt(v, 10) || profile.weightLb })} />
+        <View style={styles.row}>
+          <Txt style={styles.label}>Height</Txt>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+            <TextInput
+              value={feet}
+              onChangeText={(t) => { const c = t.replace(/[^0-9]/g, ''); setFeet(c); commitHeight(c, inches); }}
+              keyboardType="numeric"
+              accessibilityLabel="Height in feet"
+              style={[styles.input, { minWidth: 28 }]}
+              selectionColor={colors.accent.fill}
+            />
+            <Txt style={styles.unit}>ft</Txt>
+            <TextInput
+              value={inches}
+              onChangeText={(t) => { const c = t.replace(/[^0-9]/g, ''); setInches(c); commitHeight(feet, c); }}
+              keyboardType="numeric"
+              accessibilityLabel="Height in inches"
+              style={[styles.input, { minWidth: 28, marginLeft: 8 }]}
+              selectionColor={colors.accent.fill}
+            />
+            <Txt style={styles.unit}>in</Txt>
+          </View>
+        </View>
+        <NumberField label="Weight" value={profile.weightLb} unit="lb" onCommit={(weightLb) => setProfile({ weightLb })} />
         <View style={[styles.row, { flexDirection: 'column', alignItems: 'stretch', gap: 8, borderBottomWidth: 0 }]}>
           <Txt style={styles.label}>Diet or allergies</Txt>
           <TextInput
@@ -67,7 +104,7 @@ export default function AboutYou() {
       </Card>
 
       <Txt v="bodyMuted" style={{ paddingHorizontal: 4 }}>
-        Used only to set your calorie and protein baseline. You can change any of this later.
+        Used only to set your calorie and protein baseline. You can change any of this later in Settings.
       </Txt>
     </Screen>
   );
@@ -84,6 +121,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.hairline,
   },
   label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink2 },
-  input: { minWidth: 120, textAlign: 'right', fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink, padding: 0 },
+  input: { textAlign: 'right', fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink, padding: 0 },
+  unit: { fontFamily: fonts.bold, fontSize: 14, color: colors.caption },
   textField: { height: 44, paddingHorizontal: 14, borderRadius: 13, backgroundColor: colors.field, fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
 });

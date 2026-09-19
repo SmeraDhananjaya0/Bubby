@@ -14,13 +14,16 @@ type Props = {
   /** Turn off scrolling for fixed layouts (Welcome). */
   scroll?: boolean;
   contentStyle?: ViewStyle;
+  /** Access the inner ScrollView (e.g. the coach thread auto-scrolling to the end). */
+  scrollRef?: React.RefObject<ScrollView | null>;
+  onContentSizeChange?: (w: number, h: number) => void;
 };
 
 /**
  * Every screen: warm ground + ambient glows + a vertical stack of cards
  * with 14px gaps and 20px side gutters. Cards never touch the edges.
  */
-export function Screen({ ambient = 'today', children, footer, bottomPad, scroll = true, contentStyle }: Props) {
+export function Screen({ ambient = 'today', children, footer, bottomPad, scroll = true, contentStyle, scrollRef, onContentSizeChange }: Props) {
   const insets = useSafeAreaInsets();
   const content = [
     styles.content,
@@ -32,6 +35,8 @@ export function Screen({ ambient = 'today', children, footer, bottomPad, scroll 
       <Ambient preset={ambient} />
       {scroll ? (
         <ScrollView
+          ref={scrollRef}
+          onContentSizeChange={onContentSizeChange}
           contentContainerStyle={content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
