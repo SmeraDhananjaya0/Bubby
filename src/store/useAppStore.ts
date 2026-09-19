@@ -16,7 +16,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { zustandStorage } from '@/lib/storage';
-import type { ChatMessage, CoachProposal, DayPlan, FoodOption, Meal, Profile, Race } from '@/types';
+import type { ChatMessage, CoachProposal, DayPlan, FoodOption, Meal, Profile, Race, RunHistory } from '@/types';
 import { sampleMeals, sampleProfile, sampleRace, sampleTodayIndex, sampleWeek } from '@/data/sample';
 import { nowTime } from '@/lib/format';
 import { coachReply } from '@/lib/coach';
@@ -43,6 +43,8 @@ type UserData = {
   chat: ChatMessage[];
   /** Foods the user has typed in manually on the Log tab. */
   customFoods: FoodOption[];
+  /** Last 12 weeks of synced runs (cloud accounts with Strava); null until known. */
+  history: RunHistory | null;
 };
 
 type State = UserData & {
@@ -115,6 +117,7 @@ function freshUserData(): UserData {
     coachApplied: false,
     chat: [greeting()],
     customFoods: [],
+    history: null,
   };
 }
 
@@ -135,6 +138,7 @@ function snapshotOf(s: State): UserData {
     coachApplied: s.coachApplied,
     chat: s.chat,
     customFoods: s.customFoods,
+    history: s.history,
   };
 }
 
@@ -194,7 +198,7 @@ export const useAppStore = create<State & Actions>()(
             await repo.saveProfile(uid, s.profile, { onboarded: true });
             if (s.hasRace) {
               await repo.saveRace(uid, s.race);
-              await repo.savePlan(uid, s.race, s.profile);
+              await repo.savePlan(uid, s.race, s.profile, { currentWeeklyMiles: s.history?.weeklyAvg || undefined });
               const [wk, race] = await Promise.all([repo.loadWeek(uid), repo.loadRace(uid)]);
               set({ week: wk.week, todayIndex: wk.todayIndex, ...(race ? { race } : {}) });
             }
@@ -209,7 +213,7 @@ export const useAppStore = create<State & Actions>()(
           swallow(
             (async () => {
               await repo.saveRace(s.userId!, s.race);
-              await repo.savePlan(s.userId!, s.race, s.profile);
+              await repo.savePlan(s.userId!, s.race, s.profile, { currentWeeklyMiles: s.history?.weeklyAvg || undefined });
               const wk = await repo.loadWeek(s.userId!);
               set({ week: wk.week, todayIndex: wk.todayIndex });
             })(),
@@ -353,11 +357,12 @@ export const useAppStore = create<State & Actions>()(
         if (!cloud(s)) return;
         const uid = s.userId!;
         try {
-          const [prof, race, wk, nut] = await Promise.all([repo.loadProfile(uid), repo.loadRace(uid), repo.loadWeek(uid), repo.loadNutrition(uid)]);
+          const [prof, race, wk, nut, history] = await Promise.all([repo.loadProfile(uid), repo.loadRace(uid), repo.loadWeek(uid), repo.loadNutrition(uid), repo.loadHistory(uid).catch(() => null)]);
           const onboarded = !!prof?.onboarded;
           const hasPlan = wk.week.some((d) => d.type !== 'rest');
           set({
             cloudReady: true,
+            history,
             ...(prof ? { profile: prof.profile, onboarded: onboarded || s.onboarded } : {}),
             ...(race ? { race, hasRace: true } : onboarded ? { hasRace: false } : {}),
             // A brand-new cloud account keeps the sample week until onboarding builds a real plan.

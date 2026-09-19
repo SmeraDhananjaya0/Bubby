@@ -8,7 +8,7 @@
 import { callFunction, supabase } from '@/lib/supabase';
 import { targetsFor } from '@/lib/fuel';
 import type { Tables, TablesInsert } from '@/lib/database.types';
-import type { DayPlan, Macros, Meal, PlanChange, Profile, Race, WorkoutType } from '@/types';
+import type { DayPlan, Macros, Meal, PlanChange, Profile, Race, RunHistory, WorkoutType } from '@/types';
 import { buildPlan, type PlanBlock } from '@/lib/plan';
 
 const TZ = 'America/New_York';
@@ -69,6 +69,9 @@ export async function loadRace(userId: string): Promise<Race | null> {
     totalWeeks: block?.total_weeks ?? 11,
     currentWeek: block?.week ?? 1,
     phase: block?.phase ? block.phase[0] + block.phase.slice(1).toLowerCase() : 'Base',
+    ...(Array.isArray(block?.periodization) && block.periodization.length
+      ? { block: { miles: (block.periodization as { miles: number }[]).map((p) => Number(p.miles)), phases: (block.periodization as { phase: Race['block'] extends infer B ? (B extends { phases: (infer P)[] } ? P : never) : never }[]).map((p) => p.phase) } }
+      : {}),
   };
 }
 
@@ -178,8 +181,6 @@ export async function loadWeek(userId: string, day = todayISO()): Promise<{ week
 }
 
 /** What Strava has shown us: weekly mileage for the last `weeks` weeks (oldest first) and a few headline numbers. */
-export type RunHistory = { runs: number; weeklyMiles: number[]; weeklyAvg: number; longestMi: number; maxHr: number | null; avgPaceSec: number | null };
-
 export async function loadHistory(userId: string, weeks = 12): Promise<RunHistory> {
   const today = todayISO();
   const monday = new Date(today + 'T00:00:00');

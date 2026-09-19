@@ -50,6 +50,21 @@ export type Race = {
   totalWeeks: number;
   currentWeek: number;
   phase: string;
+  /** The saved block's weekly miles + phase, oldest first (cloud accounts). */
+  block?: { miles: number[]; phases: Array<'base' | 'build' | 'peak' | 'taper'> };
+};
+
+/** What the run history (Strava) says about the last 12 weeks. */
+export type RunHistory = {
+  runs: number;
+  /** Miles per week, oldest first. */
+  weeklyMiles: number[];
+  /** Average of the last four weeks. */
+  weeklyAvg: number;
+  longestMi: number;
+  maxHr: number | null;
+  /** Distance-weighted average pace over the last four weeks, sec / mi. */
+  avgPaceSec: number | null;
 };
 
 export type Profile = {

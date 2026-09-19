@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { TrendingUp } from 'lucide-react-native';
-import { Button, Card, CardHeader, Screen, Stat, StepIndicator, Txt } from '@/components';
-import { loadHistory, type RunHistory } from '@/data/repo';
+import { Button, Card, CardHeader, HistoryBars, Screen, Stat, StepIndicator, Txt } from '@/components';
+import { loadHistory } from '@/data/repo';
+import type { RunHistory } from '@/types';
 import { sampleHistoryMiles, sampleStravaStats } from '@/data/sample';
 import { fmtPace } from '@/lib/plan';
 import { useAppStore } from '@/store/useAppStore';
@@ -27,7 +28,6 @@ export default function Connected() {
   }, [userId, via]);
 
   const h = history;
-  const max = Math.max(1, ...(h?.weeklyMiles ?? [1]));
   const last3 = h ? Math.round(h.weeklyMiles.slice(-3).reduce((a, b) => a + b, 0) / 3) : 0;
   const none = !!h && h.runs === 0;
 
@@ -52,15 +52,7 @@ export default function Connected() {
 
       <Card>
         <CardHeader icon={TrendingUp} title="Last 12 weeks" hue={hues.teal} meta="Miles per week" />
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 150 }}>
-          {(h?.weeklyMiles ?? Array(12).fill(0)).map((m, i) => (
-            <View key={i} style={{ flex: 1, height: Math.max(3, Math.round((m / max) * 150)), borderRadius: 7, backgroundColor: i >= 9 ? hues.teal.fill : 'rgba(34, 179, 166, 0.32)' }} />
-          ))}
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Txt v="micro">12 wks ago</Txt>
-          <Txt v="micro" color={hues.teal.text}>{none ? 'No runs yet' : `Last 3 weeks · ${last3} mi avg`}</Txt>
-        </View>
+        <HistoryBars weeklyMiles={h?.weeklyMiles ?? Array(12).fill(0)} right={none ? 'No runs yet' : `Last 3 weeks · ${last3} mi avg`} />
       </Card>
 
       <Txt v="bodyMuted" style={{ paddingHorizontal: 4 }}>

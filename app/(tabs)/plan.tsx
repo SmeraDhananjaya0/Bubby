@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Activity, Check, ChevronRight, Flag, Moon, Sparkles, Zap } from 'lucide-react-native';
-import { BlockChart, Button, Card, CardHeader, Chip, Header, IconCircle, Screen, Stat, Txt } from '@/components';
+import { Activity, Check, ChevronRight, Flag, Moon, Sparkles, TrendingUp, Zap } from 'lucide-react-native';
+import { BlockChart, Button, Card, CardHeader, Chip, Header, HistoryBars, IconCircle, Screen, Stat, Txt } from '@/components';
 import { useAppStore } from '@/store/useAppStore';
 import { targetsFor } from '@/lib/fuel';
-import { n } from '@/lib/format';
+import { n, shortDate } from '@/lib/format';
 import { sampleBlockMiles, sampleBlockPhases } from '@/data/sample';
 import { colors, fonts, hues, workoutHue } from '@/theme/tokens';
 import type { WorkoutType } from '@/types';
@@ -22,13 +22,17 @@ const ICON: Record<WorkoutType, React.ComponentType<{ size?: number; color?: str
 /** Plan tab: this week (tap a day), the adaptive suggestion, the whole block. */
 export default function Plan() {
   const router = useRouter();
-  const { week, todayIndex, profile, race, suggestion, setSuggestion } = useAppStore();
+  const { week, todayIndex, profile, race, suggestion, setSuggestion, history } = useAppStore();
   const [open, setOpen] = useState<number>(todayIndex);
 
   const totalMiles = week.reduce((a, d) => a + d.miles, 0);
   const avgKcal = Math.round(week.reduce((a, d) => a + targetsFor(d, profile).kcal, 0) / week.length / 10) * 10;
-  const peakWeek = sampleBlockMiles.indexOf(Math.max(...sampleBlockMiles)) + 1;
-  const taperFrom = sampleBlockPhases.indexOf('taper') + 1;
+  // The saved block for cloud accounts; the canvas sample in local mode.
+  const blockMiles = race.block?.miles ?? sampleBlockMiles;
+  const blockPhases = race.block?.phases ?? sampleBlockPhases;
+  const peakWeek = blockMiles.indexOf(Math.max(...blockMiles)) + 1;
+  const taperFrom = blockPhases.indexOf('taper') + 1;
+  const last3 = history ? Math.round(history.weeklyMiles.slice(-3).reduce((a, b) => a + b, 0) / 3) : 0;
 
   return (
     <Screen ambient="plan">
@@ -118,16 +122,23 @@ export default function Plan() {
 
       <Card gap={12}>
         <CardHeader icon={Flag} title="Training block" hue={hues.accent} meta={`${race.totalWeeks} weeks · ${race.name.split(' ')[0]}`} />
-        <BlockChart miles={sampleBlockMiles} phases={sampleBlockPhases} currentWeek={race.currentWeek} />
+        <BlockChart miles={blockMiles} phases={blockPhases} currentWeek={race.currentWeek} />
         <View style={styles.phaseLabels}>
           {['Base', 'Build', 'Peak', 'Taper', 'Race'].map((p) => (
             <Txt key={p} v="micro">{p}</Txt>
           ))}
         </View>
         <Txt v="bodyMuted" style={{ paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-          Peak of {Math.max(...sampleBlockMiles)} mi in week {peakWeek} · taper from week {taperFrom} · race day Sun, Dec 6
+          Peak of {Math.max(...blockMiles)} mi in week {peakWeek}{taperFrom > 0 ? ` · taper from week ${taperFrom}` : ''} · race day {shortDate(race.date)}
         </Txt>
       </Card>
+
+      {history && history.runs > 0 ? (
+        <Card gap={12}>
+          <CardHeader icon={TrendingUp} title="Last 12 weeks" hue={hues.teal} meta={`${history.runs} runs synced`} />
+          <HistoryBars weeklyMiles={history.weeklyMiles} height={110} right={`Last 3 weeks · ${last3} mi avg`} />
+        </Card>
+      ) : null}
 
       <Card style={{ paddingTop: 18 }}>
         <View style={{ flexDirection: 'row', gap: 12 }}>

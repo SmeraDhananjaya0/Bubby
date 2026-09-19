@@ -7,6 +7,7 @@ export { Card, CardFooter, CardHeader, Divider } from './Card';
 export { Chip } from './Chip';
 export { FloatingTabBar } from './FloatingTabBar';
 export { Header } from './Header';
+export { HistoryBars } from './HistoryBars';
 export { IconCircle } from './IconCircle';
 export { Rings } from './Rings';
 export { Screen } from './Screen';
