@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, ChevronRight, Flag, LogOut, RotateCcw, User as UserIcon, UtensilsCrossed } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Flag, Link2, LogOut, RotateCcw, User as UserIcon, UtensilsCrossed } from 'lucide-react-native';
 import { Card, CardHeader, IconCircle, Screen, Txt } from '@/components';
+import { connectedProviders } from '@/data/repo';
+import { stravaConfigured, useStravaConnect } from '@/lib/strava';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { colors, fonts, hues } from '@/theme/tokens';
@@ -28,6 +30,19 @@ export default function Settings() {
   const race = useAppStore((s) => s.race);
   const hasRace = useAppStore((s) => s.hasRace);
   const reset = useAppStore((s) => s.reset);
+
+  // Connections live in the cloud (integration_tokens), so they only exist for cloud accounts.
+  const [providers, setProviders] = useState<string[]>([]);
+  useEffect(() => {
+    if (user?.cloudId) connectedProviders().then((p) => setProviders(p as string[])).catch(() => {});
+  }, [user?.cloudId]);
+  const strava = useStravaConnect(() => setProviders((p) => (p.includes('strava') ? p : [...p, 'strava'])));
+  const stravaOn = providers.includes('strava');
+  const stravaMeta = !user?.cloudId
+    ? 'Sign in with an account to connect'
+    : !stravaConfigured ? 'Not available in this build'
+    : stravaOn ? 'Connected · runs sync to your plan'
+    : strava.error ?? (strava.busy ? 'Connecting…' : 'Connect to sync your runs');
 
   const providerLabel = user?.cloudId
     ? `${user.provider === 'google' ? 'Google' : 'Email'} account · synced`
@@ -82,6 +97,10 @@ export default function Settings() {
         <Row icon={Flag} label={hasRace ? race.name : 'Add a race'} meta={hasRace ? `${race.distance} · goal ${race.goalTime}` : 'Set a goal to build a plan'} hue={hues.accent} onPress={() => router.push('/(onboarding)/goal')} />
         <View style={styles.hair} />
         <Row icon={UtensilsCrossed} label="Diet & allergies" meta={profile.diet || 'None set'} hue={hues.green} onPress={() => router.push('/(onboarding)/about-you')} />
+      </Card>
+
+      <Card gap={0} style={{ paddingTop: 6, paddingBottom: 6, paddingHorizontal: 12 }}>
+        <Row icon={Link2} label="Strava" meta={stravaMeta} hue={hues.accent} onPress={() => { if (user?.cloudId && !stravaOn && strava.ready && !strava.busy) strava.connect(); }} />
       </Card>
 
       <Card gap={0} style={{ paddingTop: 6, paddingBottom: 6, paddingHorizontal: 12 }}>

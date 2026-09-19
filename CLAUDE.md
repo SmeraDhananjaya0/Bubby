@@ -46,6 +46,7 @@ app/                          # routes (expo-router)
   nutrients.tsx               # pushed from Log
   plan-updated.tsx            # modal: a run synced from Strava changed the plan
   recap.tsx                   # modal: yesterday's fueling recap
+  strava.tsx                  # web OAuth landing: Strava redirects here with ?code, we exchange it and continue
 src/
   theme/tokens.ts             # colors, hues, radii, spacing, shadows, type scale, ambient presets  ← the design system
   components/                 # Screen, Header, Card, Button, Chip, Stat, Bar, Rings, WeekBars, BlockChart, TrendChart, …
@@ -59,7 +60,7 @@ src/
   lib/google.ts               # expo-auth-session Google (local mode only; cloud uses Supabase OAuth)
   lib/coach.ts                # local rule-based coach — the fallback when the coach function isn't reachable
   lib/plan.ts                 # plan builder v0: goal + profile → periodized block of daily sessions (pure)
-  lib/strava.ts               # expo-auth-session flow → strava-auth function
+  lib/strava.ts               # Strava OAuth: auth-session on native, full-page redirect → app/strava.tsx on web
   lib/storage.ts              # AsyncStorage adapter for zustand persist
   lib/health.ts               # Apple Health adapter (iOS; native module loaded lazily)
   lib/database.types.ts       # Database type (hand-condensed; regenerate with supabase gen types)

@@ -29,3 +29,7 @@ npm-debug.*
 
 # Supabase CLI link metadata (created by `supabase link`)
 supabase/.temp/
+
+# Vercel CLI link metadata
+.vercel/
+.vercel

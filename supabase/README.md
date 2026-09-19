@@ -26,8 +26,8 @@ supabase secrets set \
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
-Strava: create an API app at strava.com/settings/api with **Authorization Callback Domain** = `bubbie` (native)
-and your web domain; put the client id in `EXPO_PUBLIC_STRAVA_CLIENT_ID`.
+Strava: create an API app at strava.com/settings/api with **Authorization Callback Domain** = the web domain
+(`bubbie-flax.vercel.app` — Strava allows exactly one); put the client id in `EXPO_PUBLIC_STRAVA_CLIENT_ID`.
 
 ## Testing sign-in without email
 

@@ -59,7 +59,9 @@ makes it installable). `vercel.json` carries the build command, output dir, SPA 
 1. Push `main`.
 2. [vercel.com/new](https://vercel.com/new) → import `SmeraDhananjaya0/Bubby` → **Deploy** (no settings to change).
 
-Or from a terminal: `npx vercel --prod`. On desktop widths the app renders in a 430px phone frame.
+Or from a terminal: `vercel deploy --prod` (the Vercel project is `bubbie`, live at https://bubbie-flax.vercel.app —
+this is how it is deployed today, because the Vercel account can't see the GitHub repo). On an iPhone, open the
+URL in Safari → Share → **Add to Home Screen** to install it as an app. On desktop widths it renders in a 430px phone frame.
 
 ## Backend
 
@@ -72,7 +74,9 @@ Supabase project `vekgulejexranhdhecdp`. Schema, functions and secrets are docum
 - **Auth → Google** (optional): enable the provider with a Google OAuth client, and add `bubbie://auth` plus your
   web origin to *Redirect URLs*. Until then the Google button explains and email still works.
 - **Secrets**: `supabase secrets set STRAVA_CLIENT_ID STRAVA_CLIENT_SECRET TOKEN_ENC_KEY ANTHROPIC_API_KEY`.
-- **Strava app**: callback domain `bubbie` + your web domain; client id → `EXPO_PUBLIC_STRAVA_CLIENT_ID`.
+- **Strava app**: Strava allows one *Authorization Callback Domain* per app — set it to the web domain
+  (`bubbie-flax.vercel.app`); the redirect lands on `/strava`. Client id → `EXPO_PUBLIC_STRAVA_CLIENT_ID` in
+  `.env.production`. New apps are single-athlete until you raise capacity to 10 from the API settings page.
 
 ## What's here
 
