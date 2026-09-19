@@ -7,7 +7,6 @@
     "scheme": "bubbie",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "backgroundColor": "#F6F5F1",
     "ios": {
       "supportsTablet": false,
