@@ -172,3 +172,7 @@ web export + Vercel config · custom foods + search on Log · Settings.
 - Edge functions are Deno; they're excluded from `tsc` (see `tsconfig.json`). Deploy with `npm run functions:deploy`.
 - SVG gradient ids are made unique with `useId()` because several screens stay mounted; keep doing that.
 - The floating tab bar is a custom `tabBar` on `expo-router` Tabs; the "+" circle routes to Log with `?add=1`.
+- `npm run typecheck` depends on `.expo/types/router.d.ts` (git-ignored). Only `npx expo start` regenerates it — `expo export`
+  does not — so on a fresh clone or after adding a route file, start the dev server once first or `tsc` fails on route strings.
+- Supabase auth uses the built-in SMTP: **2 emails per hour** project-wide, and template edits take a couple of minutes to
+  propagate. To test sign-in without burning sends, mint a code with the admin `generate_link` API (see `supabase/README.md`).

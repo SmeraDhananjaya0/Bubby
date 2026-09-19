@@ -66,8 +66,9 @@ Or from a terminal: `npx vercel --prod`. On desktop widths the app renders in a 
 Supabase project `vekgulejexranhdhecdp`. Schema, functions and secrets are documented in
 [`supabase/README.md`](supabase/README.md). Short version of what's left to flip on:
 
-- **Auth → Email**: enable the provider and make sure the *Magic Link* email template contains `{{ .Token }}`
-  (the app asks for the six-digit code, not the link).
+- **Auth → Email**: done — provider enabled, the *Magic Link* template carries `{{ .Token }}` (source in
+  `supabase/templates/sign-in-code.html`), OTP length 6. Built-in SMTP allows **2 emails/hour** — set up custom SMTP
+  (Dashboard → Auth → SMTP) before real users.
 - **Auth → Google** (optional): enable the provider with a Google OAuth client, and add `bubbie://auth` plus your
   web origin to *Redirect URLs*. Until then the Google button explains and email still works.
 - **Secrets**: `supabase secrets set STRAVA_CLIENT_ID STRAVA_CLIENT_SECRET TOKEN_ENC_KEY ANTHROPIC_API_KEY`.

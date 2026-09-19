@@ -11,7 +11,7 @@ URL `https://vekgulejexranhdhecdp.supabase.co` — the publishable key is in `.e
 | `strava-auth` edge function — OAuth code → encrypted tokens | `functions/strava-auth` | deployed v1 |
 | `strava-sync` edge function — pull runs, match to plan, propose fuel changes, write `daily_targets` | `functions/strava-sync` | deployed v1 |
 | `coach` edge function — Claude with the `propose_plan_changes` tool; persists chat + proposals | `functions/coach` | deployed v1 |
-| Auth — email OTP (six-digit code) + optional Google | Dashboard → Authentication | enable Email (template with `{{ .Token }}`), Google provider, redirect `bubbie://auth` |
+| Auth — email OTP (six-digit code) + optional Google | Dashboard → Authentication | Email enabled; Magic Link template = `templates/sign-in-code.html` (carries `{{ .Token }}`), OTP length 6. Google provider + `bubbie://auth` redirect: not yet |
 
 ## Secrets the functions need (set once)
 
@@ -28,6 +28,19 @@ supabase secrets set \
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 Strava: create an API app at strava.com/settings/api with **Authorization Callback Domain** = `bubbie` (native)
 and your web domain; put the client id in `EXPO_PUBLIC_STRAVA_CLIENT_ID`.
+
+## Testing sign-in without email
+
+The built-in SMTP sends at most 2 emails/hour. To get a valid six-digit code without sending one:
+
+```bash
+KEY=$(supabase projects api-keys --project-ref vekgulejexranhdhecdp -o json | jq -r '.[]|select(.name=="service_role").api_key')
+curl -s -X POST https://vekgulejexranhdhecdp.supabase.co/auth/v1/admin/generate_link \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+  -d '{"type":"magiclink","email":"you@example.com"}' | jq .email_otp
+```
+
+The user must already exist; the code expires after `mailer_otp_exp` (60 min).
 
 ## Day-to-day
 
