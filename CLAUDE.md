@@ -176,4 +176,7 @@ web export + Vercel config · custom foods + search on Log · Settings.
 - `npm run typecheck` depends on `.expo/types/router.d.ts` (git-ignored). Only `npx expo start` regenerates it — `expo export`
   does not — so on a fresh clone or after adding a route file, start the dev server once first or `tsc` fails on route strings.
 - Supabase auth uses the built-in SMTP: **2 emails per hour** project-wide, and template edits take a couple of minutes to
-  propagate. To test sign-in without burning sends, mint a code with the admin `generate_link` API (see `supabase/README.md`).
+  propagate. Sign-in has an "I already have a code" path for exactly this: mint a code with the admin `generate_link` API
+  (see `supabase/README.md`) and enter it there. The durable fix is custom SMTP (Dashboard → Authentication → SMTP).
+- Strava tokens live on a cloud account, so guests can't connect Strava; the Welcome button routes them to sign-in.
+  Apple Health is native-only and its button is hidden on web.
