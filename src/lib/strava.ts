@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import { AppState } from 'react-native';
 import { connectStrava, syncStrava } from '@/data/repo';
+import { isCloudConfigured } from '@/lib/supabase';
+import { useAppStore } from '@/store/useAppStore';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -48,8 +51,31 @@ function startWebRedirect() {
   window.location.assign(`https://www.strava.com/oauth/authorize?${params.toString()}`);
 }
 
-/** After a connect, pull recent runs once so the plan reflects them. Failures wait for the next sync. */
-const firstSync = () => void syncStrava().catch(() => {});
+/** After a connect: pull the last 90 days, then re-read the cloud so the screens show the runs. A failed pull just waits for the next sync. */
+async function firstSync() {
+  await syncStrava().catch(() => {});
+  await useAppStore.getState().hydrateFromCloud();
+}
+
+let lastAutoSync = 0;
+/**
+ * Pull new runs whenever the app opens or comes back to the foreground, at most every
+ * 10 minutes. Mount once in the tabs layout. Not connected (409) is a normal outcome.
+ */
+export function useStravaAutoSync() {
+  const userId = useAppStore((s) => s.userId);
+  useEffect(() => {
+    if (!userId || !isCloudConfigured) return;
+    const run = () => {
+      if (Date.now() - lastAutoSync < 10 * 60_000) return;
+      lastAutoSync = Date.now();
+      syncStrava().then(() => useAppStore.getState().hydrateFromCloud()).catch(() => {});
+    };
+    run();
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') run(); });
+    return () => sub.remove();
+  }, [userId]);
+}
 
 /**
  * Web only — called by `app/strava.tsx` with the code Strava sent back.
@@ -60,7 +86,7 @@ export async function finishStravaConnect(code: string, state: string | null): P
   localStorage.removeItem(STATE_KEY);
   if (!expected || state !== expected) throw new Error('That Strava link has expired. Please try connecting again.');
   const r = await connectStrava(code, stravaRedirectUri());
-  firstSync();
+  await firstSync();
   return r.athlete;
 }
 
@@ -89,7 +115,7 @@ export function useStravaConnect(onConnected?: (athlete: Athlete) => void) {
     if (response?.type !== 'success' || !response.params.code) return;
     setBusy(true);
     connectStrava(response.params.code, redirectUri)
-      .then((r) => { firstSync(); onConnected?.(r.athlete); })
+      .then(async (r) => { await firstSync(); onConnected?.(r.athlete); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusy(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps

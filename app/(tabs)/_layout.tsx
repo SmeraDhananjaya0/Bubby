@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import { FloatingTabBar } from '@/components';
+import { useStravaAutoSync } from '@/lib/strava';
 
 export default function TabsLayout() {
+  useStravaAutoSync();
   return (
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}

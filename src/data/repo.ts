@@ -144,20 +144,22 @@ export async function loadWeek(userId: string, day = todayISO()): Promise<{ week
   });
   const [{ data: sessions }, { data: acts }] = await Promise.all([
     supabase.from('planned_sessions').select('*').eq('user_id', userId).in('date', dates),
-    supabase.from('activities').select('matched_session_id, distance_m, moving_sec, avg_pace_sec_per_mi').eq('user_id', userId).gte('started_at', dates[0]).lte('started_at', dates[6] + 'T23:59:59'),
+    supabase.from('activities').select('matched_session_id, started_at, distance_m, moving_sec, avg_pace_sec_per_mi').eq('user_id', userId).gte('started_at', dates[0]).lte('started_at', dates[6] + 'T23:59:59'),
   ]);
+  const summary = (a: { distance_m: number | null; moving_sec: number | null; avg_pace_sec_per_mi: number | null }) =>
+    `${((a.distance_m ?? 0) / 1609.344).toFixed(1)} mi · ${Math.floor((a.moving_sec ?? 0) / 60)}:${String((a.moving_sec ?? 0) % 60).padStart(2, '0')} · ${a.avg_pace_sec_per_mi ? fmtPace(Number(a.avg_pace_sec_per_mi)) : '—'} /mi`;
   const week: DayPlan[] = dates.map((date) => {
     const s = (sessions ?? []).find((x) => x.date === date);
     const dt = new Date(date + 'T00:00:00');
-    if (!s) return { dow: DOW[dt.getDay()], date: dt.getDate(), type: 'rest', title: 'Rest', miles: 0, note: 'Nothing planned. Rest or easy movement.' };
+    // The day's run: the one matched to the session, else the longest run started that day (synced before the plan existed).
+    const onDay = (acts ?? []).filter((a) => todayISO(new Date(a.started_at)) === date).sort((a, b) => (b.distance_m ?? 0) - (a.distance_m ?? 0));
+    const act = (s && onDay.find((a) => a.matched_session_id === s.id)) ?? onDay[0];
+    if (!s) {
+      if (act?.distance_m) return { dow: DOW[dt.getDay()], date: dt.getDate(), type: 'easy', title: `Run ${(act.distance_m / 1609.344).toFixed(1)} mi`, miles: 0, note: 'Not on the plan — synced from Strava.', done: summary(act) };
+      return { dow: DOW[dt.getDay()], date: dt.getDate(), type: 'rest', title: 'Rest', miles: 0, note: 'Nothing planned. Rest or easy movement.' };
+    }
     const p = (s.payload ?? {}) as { distanceMi?: number; paceTarget?: string; zone?: string; time?: string; fuel?: string };
-    const act = (acts ?? []).find((a) => a.matched_session_id === s.id);
-    const done =
-      act && act.distance_m
-        ? `${(act.distance_m / 1609.344).toFixed(1)} mi · ${Math.floor((act.moving_sec ?? 0) / 60)}:${String((act.moving_sec ?? 0) % 60).padStart(2, '0')} · ${act.avg_pace_sec_per_mi ? fmtPace(Number(act.avg_pace_sec_per_mi)) : '—'} /mi`
-        : s.status === 'done'
-          ? 'Completed'
-          : undefined;
+    const done = act?.distance_m ? summary(act) : s.status === 'done' ? 'Completed' : undefined;
     return {
       dow: DOW[dt.getDay()],
       date: dt.getDate(),
@@ -173,6 +175,41 @@ export async function loadWeek(userId: string, day = todayISO()): Promise<{ week
     };
   });
   return { week, todayIndex: Math.max(0, dates.indexOf(day)) };
+}
+
+/** What Strava has shown us: weekly mileage for the last `weeks` weeks (oldest first) and a few headline numbers. */
+export type RunHistory = { runs: number; weeklyMiles: number[]; weeklyAvg: number; longestMi: number; maxHr: number | null; avgPaceSec: number | null };
+
+export async function loadHistory(userId: string, weeks = 12): Promise<RunHistory> {
+  const today = todayISO();
+  const monday = new Date(today + 'T00:00:00');
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - (weeks - 1) * 7);
+  const since = monday.toLocaleDateString('en-CA');
+  const { data } = await supabase.from('activities').select('started_at, distance_m, moving_sec, max_hr').eq('user_id', userId).eq('sport', 'run').gte('started_at', since);
+  const acts = data ?? [];
+  const weeklyMiles = Array(weeks).fill(0) as number[];
+  let maxHr: number | null = null;
+  let longest = 0;
+  for (const a of acts) {
+    const day = new Date(todayISO(new Date(a.started_at)) + 'T00:00:00');
+    const idx = Math.floor((day.getTime() - monday.getTime()) / 604800000);
+    const mi = (a.distance_m ?? 0) / 1609.344;
+    if (idx >= 0 && idx < weeks) weeklyMiles[idx] += mi;
+    if (a.max_hr && (!maxHr || a.max_hr > maxHr)) maxHr = a.max_hr;
+    if (mi > longest) longest = mi;
+  }
+  // Last four weeks set the baseline: average volume and distance-weighted pace.
+  const recent = acts.filter((a) => new Date(a.started_at).getTime() >= Date.now() - 28 * 86400000);
+  const recentMi = recent.reduce((t, a) => t + (a.distance_m ?? 0) / 1609.344, 0);
+  const recentSec = recent.reduce((t, a) => t + (a.moving_sec ?? 0), 0);
+  return {
+    runs: acts.length,
+    weeklyMiles: weeklyMiles.map((m) => Math.round(m * 10) / 10),
+    weeklyAvg: Math.round(recentMi / 4),
+    longestMi: Math.round(longest * 10) / 10,
+    maxHr,
+    avgPaceSec: recentMi > 0 ? Math.round(recentSec / recentMi) : null,
+  };
 }
 
 // ---------------------------------------------------------------- nutrition

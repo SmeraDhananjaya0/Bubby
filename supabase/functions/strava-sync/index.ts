@@ -1,4 +1,4 @@
-// strava-sync — pull recent Strava runs, match them to planned sessions,
+// strava-sync — pull the last 90 days of Strava runs, match them to planned sessions,
 // recompute today's fuel targets, and file a proposal when a run differed.
 //
 // POST {}                    → as the signed-in user
@@ -90,15 +90,15 @@ Deno.serve(async (req) => {
       await admin.from('integration_tokens').update({ ...(await seal(JSON.stringify(tok))), expires_at: new Date(fresh.expires_at * 1000).toISOString(), updated_at: new Date().toISOString() }).eq('user_id', userId).eq('provider', 'strava');
     }
 
-    // 2. activities (last 14 days)
-    const after = Math.floor((Date.now() - 14 * 86400000) / 1000);
-    const ar = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=50`, { headers: { Authorization: `Bearer ${tok.access_token}` } });
+    // 2. activities (last 90 days — enough history for the connected screen and plan seeding)
+    const after = Math.floor((Date.now() - 90 * 86400000) / 1000);
+    const ar = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=200`, { headers: { Authorization: `Bearer ${tok.access_token}` } });
     if (!ar.ok) throw new Error('activities fetch failed: ' + (await ar.text()));
     const acts = (await ar.json()) as Array<Record<string, unknown>>;
     const runs = acts.filter((a) => String(a.sport_type ?? a.type).toLowerCase().includes('run'));
 
     const { data: profile } = await admin.from('profiles').select('*').eq('id', userId).single();
-    const from = dayOf(new Date(Date.now() - 14 * 86400000));
+    const from = dayOf(new Date(Date.now() - 90 * 86400000));
     const { data: sessions } = await admin.from('planned_sessions').select('*').eq('user_id', userId).gte('date', from).order('date');
 
     let matched = 0;
