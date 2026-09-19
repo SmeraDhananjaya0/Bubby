@@ -48,10 +48,13 @@ export async function saveProfile(userId: string, p: Partial<Profile>, extra: { 
 const DIST_MILES: Record<Race['distance'], number> = { '5K': 3.1, '10K': 6.2, Half: 13.1, Marathon: 26.2 };
 
 export async function loadRace(userId: string): Promise<Race | null> {
-  const [{ data: goal }, { data: block }] = await Promise.all([
-    supabase.from('goals').select('*').eq('user_id', userId).order('date').limit(1).maybeSingle(),
-    supabase.from('blocks').select('*').eq('user_id', userId).limit(1).maybeSingle(),
+  // Onboarding writes stable ids (`<uid>-goal` / `<uid>-block`); prefer those over anything older.
+  const [{ data: goals }, { data: blocks }] = await Promise.all([
+    supabase.from('goals').select('*').eq('user_id', userId).order('date'),
+    supabase.from('blocks').select('*').eq('user_id', userId),
   ]);
+  const goal = goals?.find((g) => g.id === `${userId}-goal`) ?? goals?.[0] ?? null;
+  const block = blocks?.find((b) => b.id === `${userId}-block`) ?? blocks?.[0] ?? null;
   if (!goal) return null;
   const payload = (goal.payload ?? {}) as { distance?: Race['distance'] };
   const distance: Race['distance'] = payload.distance ?? (/half/i.test(goal.name) ? 'Half' : /10k/i.test(goal.name) ? '10K' : /5k/i.test(goal.name) ? '5K' : 'Marathon');
@@ -80,6 +83,8 @@ export async function saveRace(userId: string, race: Race) {
     target_seconds,
     payload: { distance: race.distance },
   });
+  // One goal per account: drop anything that isn't the row above.
+  await supabase.from('goals').delete().eq('user_id', userId).neq('id', `${userId}-goal`);
 }
 
 /**
@@ -109,6 +114,7 @@ export async function savePlan(userId: string, race: Race, profile: Profile, opt
     periodization: plan.periodization,
     payload: { goalId: `${userId}-goal`, engine: 'plan-v0' },
   });
+  await supabase.from('blocks').delete().eq('user_id', userId).neq('id', `${userId}-block`);
   return plan;
 }
 
