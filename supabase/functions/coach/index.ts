@@ -5,7 +5,7 @@
 //
 // POST { message }  →  { reply, proposals: [{ id, day, from, to }], fuel?: { kcal, protein_g, carbs_g } }
 //
-// Secrets: ANTHROPIC_API_KEY. Optional: COACH_MODEL (default claude-sonnet-4-5).
+// Secrets: ANTHROPIC_API_KEY. Optional: COACH_MODEL (default claude-sonnet-5).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -92,8 +92,8 @@ Upcoming sessions (next 14 days): ${JSON.stringify(sessions)}.`;
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': Deno.env.get('ANTHROPIC_API_KEY') ?? '', 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: Deno.env.get('COACH_MODEL') ?? 'claude-sonnet-4-5',
-        max_tokens: 1024,
+        model: Deno.env.get('COACH_MODEL') ?? 'claude-sonnet-5',
+        max_tokens: 4096, // Sonnet 5 thinks before answering; leave room for that plus the reply and tool call
         system: [{ type: 'text', text: SYSTEM }, { type: 'text', text: context }],
         tools: [TOOL],
         messages,

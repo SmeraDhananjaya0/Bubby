@@ -22,7 +22,7 @@ supabase secrets set \
   STRAVA_CLIENT_SECRET=… \
   TOKEN_ENC_KEY="$(openssl rand -base64 32)" \
   ANTHROPIC_API_KEY=… \
-  COACH_MODEL=claude-sonnet-4-5
+  COACH_MODEL=claude-sonnet-5
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
