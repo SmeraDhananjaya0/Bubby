@@ -2,19 +2,18 @@ import React, { useCallback, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Rings, Screen, Txt } from '@/components';
+import { CodeSignIn } from '@/features/auth/CodeSignIn';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useGoogleAuth } from '@/lib/google';
 import { isCloudConfigured } from '@/lib/supabase';
-import { sendCode, signInWithGoogle, verifyCode } from '@/lib/useAuth';
 import { colors, fonts, hues, macroHue } from '@/theme/tokens';
 import type { User } from '@/types';
 
 /**
  * Sign in.
- *  - Cloud mode (Supabase configured): Google via Supabase OAuth, or email → six-digit code.
+ *  - Cloud mode (Supabase configured): pick your name, enter your personal code (`CodeSignIn`).
  *    The session lands through `useAuth()` in the root layout, which signs the store in.
- *  - Local mode: Google via expo-auth-session (or a demo account), or a local email account.
- *  - Guest always works: data stays on this device.
+ *  - Local mode: Google via expo-auth-session (or a demo account), a local email account, or guest.
  */
 export default function SignIn() {
   const router = useRouter();
@@ -23,9 +22,6 @@ export default function SignIn() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [stage, setStage] = useState<'email' | 'code'>('email');
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const done = useCallback(() => router.replace('/'), [router]);
@@ -39,29 +35,8 @@ export default function SignIn() {
   );
   const google = useGoogleAuth(onGoogleUser);
 
-  const validEmail = () => {
-    const e = email.trim().toLowerCase();
-    if (!e.includes('@') || !e.includes('.')) {
-      setError('Enter a valid email address.');
-      return null;
-    }
-    return e;
-  };
-
-  const handleGoogle = async () => {
+  const handleGoogle = () => {
     setError('');
-    if (isCloudConfigured) {
-      setBusy(true);
-      try {
-        await signInWithGoogle();
-        done();
-      } catch (e) {
-        setError(e instanceof Error && !/cancel/i.test(e.message) ? 'Google sign-in is not enabled yet — use your email below.' : '');
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
     if (google.available) google.signIn();
     else {
       // No OAuth keys configured — create a local account so the app is usable.
@@ -70,45 +45,14 @@ export default function SignIn() {
     }
   };
 
-  const handleEmail = async () => {
-    const e = validEmail();
-    if (!e) return;
-    if (!isCloudConfigured) {
-      signIn({ id: `email:${e}`, name: name.trim() || e.split('@')[0], email: e, provider: 'email' });
-      done();
+  const handleEmail = () => {
+    const e = email.trim().toLowerCase();
+    if (!e.includes('@') || !e.includes('.')) {
+      setError('Enter a valid email address.');
       return;
     }
-    setBusy(true);
-    setError('');
-    try {
-      await sendCode(e);
-      setStage('code');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      // The built-in mailer allows 2 emails/hour project-wide; say so instead of echoing the API.
-      setError(/rate limit/i.test(msg) ? 'Our mailer is over its hourly limit. Try again in an hour — or tap “I already have a code” if you were given one.' : msg || 'Could not send the code. Try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleVerify = async () => {
-    const e = validEmail();
-    if (!e) return;
-    if (code.trim().length < 6) {
-      setError('Enter the six-digit code from your email.');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await verifyCode(e, code.trim());
-      done();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'That code did not work.');
-    } finally {
-      setBusy(false);
-    }
+    signIn({ id: `email:${e}`, name: name.trim() || e.split('@')[0], email: e, provider: 'email' });
+    done();
   };
 
   return (
@@ -131,23 +75,23 @@ export default function SignIn() {
         <Txt style={styles.sub}>Sign in to save your plan, logs and coach — on any device.</Txt>
       </View>
 
-      <Button variant="cta" label={busy && stage === 'email' ? 'Opening Google…' : 'Continue with Google'} onPress={handleGoogle} />
-
-      <View style={styles.dividerRow}>
-        <View style={styles.line} />
-        <Txt v="caption" style={{ fontFamily: fonts.bold }}>OR</Txt>
-        <View style={styles.line} />
-      </View>
-
-      {stage === 'email' ? (
+      {isCloudConfigured ? (
+        <CodeSignIn />
+      ) : (
         <>
+          <Button variant="cta" label="Continue with Google" onPress={handleGoogle} />
+
+          <View style={styles.dividerRow}>
+            <View style={styles.line} />
+            <Txt v="caption" style={{ fontFamily: fonts.bold }}>OR</Txt>
+            <View style={styles.line} />
+          </View>
+
           <View style={styles.card}>
-            {!isCloudConfigured ? (
-              <View style={styles.field}>
-                <Txt style={styles.label}>Name</Txt>
-                <TextInput value={name} onChangeText={setName} placeholder="Optional" placeholderTextColor={colors.caption} accessibilityLabel="Name" style={styles.input} selectionColor={colors.accent.fill} />
-              </View>
-            ) : null}
+            <View style={styles.field}>
+              <Txt style={styles.label}>Name</Txt>
+              <TextInput value={name} onChangeText={setName} placeholder="Optional" placeholderTextColor={colors.caption} accessibilityLabel="Name" style={styles.input} selectionColor={colors.accent.fill} />
+            </View>
             <View style={[styles.field, { borderBottomWidth: 0 }]}>
               <Txt style={styles.label}>Email</Txt>
               <TextInput
@@ -170,55 +114,17 @@ export default function SignIn() {
             </View>
           </View>
           {error ? <Txt style={styles.error}>{error}</Txt> : null}
-          <Button
-            label={isCloudConfigured ? (busy ? 'Sending…' : 'Email me a code') : 'Create account & continue'}
-            onPress={handleEmail}
-            style={{ height: 50, width: '100%', borderRadius: 16 }}
-          />
-          {isCloudConfigured ? (
-            <Button variant="ghost" label="I already have a code" onPress={() => { if (validEmail()) { setStage('code'); setError(''); } }} style={{ alignSelf: 'center', marginTop: -6 }} />
-          ) : null}
-        </>
-      ) : (
-        <>
-          <View style={styles.card}>
-            <View style={[styles.field, { borderBottomWidth: 0 }]}>
-              <Txt style={styles.label}>Code</Txt>
-              <TextInput
-                value={code}
-                onChangeText={(v) => {
-                  setCode(v.replace(/[^0-9]/g, '').slice(0, 6));
-                  if (error) setError('');
-                }}
-                placeholder="123456"
-                placeholderTextColor={colors.caption}
-                keyboardType="number-pad"
-                autoComplete="one-time-code"
-                textContentType="oneTimeCode"
-                accessibilityLabel="Six-digit code"
-                style={[styles.input, { letterSpacing: 4, fontFamily: fonts.extrabold, fontSize: 20 }]}
-                selectionColor={colors.accent.fill}
-                onSubmitEditing={handleVerify}
-                autoFocus
-              />
-            </View>
-          </View>
-          <Txt v="caption" style={{ textAlign: 'center' }}>Enter the six-digit code for {email.trim()}.</Txt>
-          {error ? <Txt style={styles.error}>{error}</Txt> : null}
-          <Button label={busy ? 'Checking…' : 'Verify & continue'} onPress={handleVerify} style={{ height: 50, width: '100%', borderRadius: 16 }} />
-          <Button variant="ghost" label="Use a different email" onPress={() => { setStage('email'); setCode(''); setError(''); }} style={{ alignSelf: 'center' }} />
+          <Button label="Create account & continue" onPress={handleEmail} style={{ height: 50, width: '100%', borderRadius: 16 }} />
+
+          <Button variant="ghost" label="Continue as guest" onPress={() => { signInGuest(); done(); }} style={{ alignSelf: 'center', marginTop: 2 }} />
+
+          <Txt v="caption" style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 2 }}>
+            {google.available
+              ? 'We only read your name and email to set up your account.'
+              : 'Running without a backend — accounts live on this device. Add the Supabase env to sync.'}
+          </Txt>
         </>
       )}
-
-      <Button variant="ghost" label="Continue as guest" onPress={() => { signInGuest(); done(); }} style={{ alignSelf: 'center', marginTop: 2 }} />
-
-      <Txt v="caption" style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 2 }}>
-        {isCloudConfigured
-          ? 'No password. Your plan, logs and coach sync across devices. Guests keep everything on this device only.'
-          : google.available
-            ? 'We only read your name and email to set up your account.'
-            : 'Running without a backend — accounts live on this device. Add the Supabase env to sync.'}
-      </Txt>
     </Screen>
   );
 }

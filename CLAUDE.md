@@ -39,7 +39,7 @@ the UI). `useAuthStore` is the identity (`User`); `useAuth()` maps a Supabase se
 app/                          # routes (expo-router)
   _layout.tsx                 # fonts, splash, useAuth(), root Stack
   index.tsx                   # → sign-in (cloud, signed out) / onboarding / tabs
-  (auth)/sign-in.tsx          # Google (Supabase OAuth) · email → six-digit code · guest (device only)
+  (auth)/sign-in.tsx          # cloud: pick a runner + personal code (features/auth/CodeSignIn) · local: Google / email / guest
   (onboarding)/               # welcome → connected → about-you → goal → plan-preview
   settings.tsx                # account, profile/race shortcuts, reset, sign out
   (tabs)/                     # today · plan · log · coach  (custom FloatingTabBar)
@@ -55,6 +55,7 @@ src/
   store/useAuthStore.ts       # who is signed in (User); cloud accounts carry `cloudId`
   data/repo.ts                # the ONLY Supabase access layer: DB rows ↔ app types, rpc, edge-function calls, savePlan()
   data/sample.ts              # sample data mirroring the design canvas (local mode)
+  data/members.ts             # who can sign in to the live app; their code is their Supabase password
   lib/supabase.ts             # client + isCloudConfigured + callFunction()
   lib/useAuth.ts              # Supabase session ↔ useAuthStore/useAppStore; sendCode / verifyCode / signInWithGoogle
   lib/google.ts               # expo-auth-session Google (local mode only; cloud uses Supabase OAuth)
@@ -175,8 +176,8 @@ web export + Vercel config · custom foods + search on Log · Settings.
 - The floating tab bar is a custom `tabBar` on `expo-router` Tabs; the "+" circle routes to Log with `?add=1`.
 - `npm run typecheck` depends on `.expo/types/router.d.ts` (git-ignored). Only `npx expo start` regenerates it — `expo export`
   does not — so on a fresh clone or after adding a route file, start the dev server once first or `tsc` fails on route strings.
-- Supabase auth uses the built-in SMTP: **2 emails per hour** project-wide, and template edits take a couple of minutes to
-  propagate. Sign-in has an "I already have a code" path for exactly this: mint a code with the admin `generate_link` API
-  (see `supabase/README.md`) and enter it there. The durable fix is custom SMTP (Dashboard → Authentication → SMTP).
-- Strava tokens live on a cloud account, so guests can't connect Strava; the Welcome button routes them to sign-in.
+- Live sign-in is by **personal code**: `src/data/members.ts` lists the runners, the code is that account's Supabase
+  password (set/reset with the admin API — `supabase/README.md`), and public self-signup is disabled. The email-OTP and
+  Google paths still exist in `lib/useAuth.ts` but the screen doesn't offer them; the built-in mailer is capped at
+  2 emails/hour, which is why.- Strava tokens live on a cloud account, so guests can't connect Strava; the Welcome button routes them to sign-in.
   Apple Health is native-only and its button is hidden on web.

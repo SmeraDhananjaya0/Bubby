@@ -8,9 +8,9 @@
  *  - sign-out clears both.
  *
  * Sign-in methods:
- *  - email → six-digit code (`signInWithOtp` / `verifyOtp`), no password;
- *  - Google via Supabase OAuth (PKCE) in the system browser; enable the provider in the
- *    Supabase dashboard and add `bubbie://auth` to the allowed redirect URLs.
+ *  - personal code (`signInWithCode`): the member's Supabase password, set with the admin API;
+ *  - email → six-digit code (`signInWithOtp` / `verifyOtp`) and Google OAuth are kept for
+ *    when the app opens up; the live sign-in screen only offers codes.
  */
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
@@ -76,6 +76,12 @@ export function useAuth() {
   }, []);
 
   return { ready };
+}
+
+/** Pick-a-runner sign-in: the code is the account's password (see src/data/members.ts). */
+export async function signInWithCode(email: string, code: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password: code });
+  if (error) throw error;
 }
 
 export async function sendCode(email: string) {

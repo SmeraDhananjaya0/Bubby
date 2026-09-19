@@ -11,7 +11,7 @@ URL `https://vekgulejexranhdhecdp.supabase.co` — the publishable key is in `.e
 | `strava-auth` edge function — OAuth code → encrypted tokens | `functions/strava-auth` | deployed v1 |
 | `strava-sync` edge function — pull runs, match to plan, propose fuel changes, write `daily_targets` | `functions/strava-sync` | deployed v1 |
 | `coach` edge function — Claude with the `propose_plan_changes` tool; persists chat + proposals | `functions/coach` | deployed v1 |
-| Auth — email OTP (six-digit code) + optional Google | Dashboard → Authentication | Email enabled; Magic Link template = `templates/sign-in-code.html` (carries `{{ .Token }}`), OTP length 6. Google provider + `bubbie://auth` redirect: not yet |
+| Auth — personal codes (password auth; `src/data/members.ts`) | admin API, see below | two runners provisioned; `disable_signup = true`. Email OTP template (`templates/sign-in-code.html`) and Google stay available but unused |
 
 ## Secrets the functions need (set once)
 
@@ -29,18 +29,19 @@ supabase secrets set \
 Strava: create an API app at strava.com/settings/api with **Authorization Callback Domain** = the web domain
 (`bubbie-flax.vercel.app` — Strava allows exactly one); put the client id in `EXPO_PUBLIC_STRAVA_CLIENT_ID`.
 
-## Testing sign-in without email
+## Sign-in codes
 
-The built-in SMTP sends at most 2 emails/hour. To get a valid six-digit code without sending one:
+Each runner in `src/data/members.ts` has an auth user whose password is their code (8 characters from
+`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, shown as `XXXX-XXXX`; the app strips the hyphen). The addresses are synthetic
+(`<name>@bubbie.run`) — nothing is ever emailed. To reset a code or add a runner:
 
 ```bash
 KEY=$(supabase projects api-keys --project-ref vekgulejexranhdhecdp -o json | jq -r '.[]|select(.name=="service_role").api_key')
-curl -s -X POST https://vekgulejexranhdhecdp.supabase.co/auth/v1/admin/generate_link \
-  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
-  -d '{"type":"magiclink","email":"you@example.com"}' | jq .email_otp
+H=(-H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json")
+# reset: PUT /auth/v1/admin/users/<uid>            {"password":"NEWCODE8"}
+# add:   POST /auth/v1/admin/users                 {"email":"name@bubbie.run","email_confirm":true,"password":"CODE","user_metadata":{"name":"Name"}}
+#        then add the runner to src/data/members.ts and set profiles.display_name
 ```
-
-The user must already exist; the code expires after `mailer_otp_exp` (60 min).
 
 ## Day-to-day
 

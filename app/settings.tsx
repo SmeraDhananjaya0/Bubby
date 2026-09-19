@@ -45,7 +45,7 @@ export default function Settings() {
     : strava.error ?? (strava.busy ? 'Connecting…' : 'Connect to sync your runs');
 
   const providerLabel = user?.cloudId
-    ? `${user.provider === 'google' ? 'Google' : 'Email'} account · synced`
+    ? 'Synced across your devices'
     : user?.provider === 'google' ? 'Google account (this device)' : user?.provider === 'email' ? 'Email account (this device)' : 'Guest — not saved to an account';
 
   const onSignOut = () => {

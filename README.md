@@ -68,11 +68,9 @@ URL in Safari → Share → **Add to Home Screen** to install it as an app. On d
 Supabase project `vekgulejexranhdhecdp`. Schema, functions and secrets are documented in
 [`supabase/README.md`](supabase/README.md). Short version of what's left to flip on:
 
-- **Auth → Email**: done — provider enabled, the *Magic Link* template carries `{{ .Token }}` (source in
-  `supabase/templates/sign-in-code.html`), OTP length 6. Built-in SMTP allows **2 emails/hour** — set up custom SMTP
-  (Dashboard → Auth → SMTP) before real users.
-- **Auth → Google** (optional): enable the provider with a Google OAuth client, and add `bubbie://auth` plus your
-  web origin to *Redirect URLs*. Until then the Google button explains and email still works.
+- **Auth**: done — sign-in is by personal code (password auth under the hood, codes set with the admin API, see
+  `supabase/README.md`); self-signup is disabled. Email OTP and Google remain wired in `src/lib/useAuth.ts` for if the
+  app ever opens up; the built-in mailer is capped at 2 emails/hour, so that would need custom SMTP first.
 - **Secrets**: `supabase secrets set STRAVA_CLIENT_ID STRAVA_CLIENT_SECRET TOKEN_ENC_KEY ANTHROPIC_API_KEY`.
 - **Strava app**: Strava allows one *Authorization Callback Domain* per app — set it to the web domain
   (`bubbie-flax.vercel.app`); the redirect lands on `/strava`. Client id → `EXPO_PUBLIC_STRAVA_CLIENT_ID` in
@@ -80,8 +78,8 @@ Supabase project `vekgulejexranhdhecdp`. Schema, functions and secrets are docum
 
 ## What's here
 
-- **Accounts** — Google, email code (no password) or guest; several people can share a device. Signed-in data
-  syncs through Supabase; guests keep everything on-device
+- **Accounts** — each runner picks their name and enters a personal code (`src/data/members.ts`); data syncs through
+  Supabase. Local dev mode keeps Google / email / guest accounts on-device
 - **Onboarding** — connect Strava / Apple Health, profile, goal race, plan preview → a real periodized block is
   built for your race date and run days (`src/lib/plan.ts`)
 - **Today** — goal race countdown, calorie / carb / protein rings against today's targets, the workout,
