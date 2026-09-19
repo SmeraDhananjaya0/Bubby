@@ -5,11 +5,14 @@ import { Heart, Link2 } from 'lucide-react-native';
 import { Button, Chip, Rings, Screen, Txt } from '@/components';
 import { colors, fonts, macroHue } from '@/theme/tokens';
 import { useStravaConnect } from '@/lib/strava';
+import { useAuthStore } from '@/store/useAuthStore';
 import { healthStatus, requestHealthAccess } from '@/lib/health';
 
 export default function Welcome() {
   const router = useRouter();
   const strava = useStravaConnect(() => router.push('/(onboarding)/connected'));
+  // Strava tokens live on a cloud account (integration_tokens), so guests can't connect.
+  const cloudId = useAuthStore((s) => s.user?.cloudId);
   const [healthNote, setHealthNote] = React.useState<string | null>(null);
   const connectHealth = async () => {
     const status = await healthStatus();
@@ -27,19 +30,25 @@ export default function Welcome() {
         <>
           <Button
             variant="cta"
-            label={strava.busy ? 'Connecting…' : 'Connect Strava'}
+            label={!cloudId ? 'Sign in to connect Strava' : strava.busy ? 'Connecting…' : 'Connect Strava'}
             icon={<Link2 size={16} color={colors.white} strokeWidth={2.4} />}
-            onPress={() => (strava.ready ? strava.connect() : router.push('/(onboarding)/connected'))}
+            onPress={() => (!cloudId ? router.push('/(auth)/sign-in') : strava.ready ? strava.connect() : router.push('/(onboarding)/connected'))}
           />
-          <Button
-            variant="ctaSecondary"
-            label="Connect Apple Health"
-            icon={<Heart size={16} color={colors.ink} strokeWidth={2.4} />}
-            iconRight={<Chip label="iPhone" />}
-            onPress={connectHealth}
-          />
+          {Platform.OS !== 'web' ? (
+            <Button
+              variant="ctaSecondary"
+              label="Connect Apple Health"
+              icon={<Heart size={16} color={colors.ink} strokeWidth={2.4} />}
+              iconRight={<Chip label="iPhone" />}
+              onPress={connectHealth}
+            />
+          ) : null}
           <Txt v="caption" style={styles.center}>
-            {strava.error ?? healthNote ?? 'We read runs, heart rate and pace from Strava or Apple Health. Nothing is ever posted for you.'}
+            {strava.error ?? healthNote ?? (!cloudId
+              ? 'Strava links to an account so your runs follow you between devices. Guests can skip this step.'
+              : Platform.OS === 'web'
+                ? 'We read runs, heart rate and pace from Strava. Nothing is ever posted for you. Apple Health comes with the iPhone app.'
+                : 'We read runs, heart rate and pace from Strava or Apple Health. Nothing is ever posted for you.')}
           </Txt>
           <Button variant="ghost" label="Skip for now" onPress={() => router.push('/(onboarding)/about-you')} style={{ marginTop: -4 }} />
         </>

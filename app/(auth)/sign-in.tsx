@@ -84,7 +84,9 @@ export default function SignIn() {
       await sendCode(e);
       setStage('code');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send the code. Try again.');
+      const msg = err instanceof Error ? err.message : '';
+      // The built-in mailer allows 2 emails/hour project-wide; say so instead of echoing the API.
+      setError(/rate limit/i.test(msg) ? 'Our mailer is over its hourly limit. Try again in an hour — or tap “I already have a code” if you were given one.' : msg || 'Could not send the code. Try again.');
     } finally {
       setBusy(false);
     }
@@ -173,6 +175,9 @@ export default function SignIn() {
             onPress={handleEmail}
             style={{ height: 50, width: '100%', borderRadius: 16 }}
           />
+          {isCloudConfigured ? (
+            <Button variant="ghost" label="I already have a code" onPress={() => { if (validEmail()) { setStage('code'); setError(''); } }} style={{ alignSelf: 'center', marginTop: -6 }} />
+          ) : null}
         </>
       ) : (
         <>
@@ -198,7 +203,7 @@ export default function SignIn() {
               />
             </View>
           </View>
-          <Txt v="caption" style={{ textAlign: 'center' }}>We emailed a six-digit code to {email.trim()}.</Txt>
+          <Txt v="caption" style={{ textAlign: 'center' }}>Enter the six-digit code for {email.trim()}.</Txt>
           {error ? <Txt style={styles.error}>{error}</Txt> : null}
           <Button label={busy ? 'Checking…' : 'Verify & continue'} onPress={handleVerify} style={{ height: 50, width: '100%', borderRadius: 16 }} />
           <Button variant="ghost" label="Use a different email" onPress={() => { setStage('email'); setCode(''); setError(''); }} style={{ alignSelf: 'center' }} />
