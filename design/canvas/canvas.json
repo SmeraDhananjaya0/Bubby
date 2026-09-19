@@ -1,0 +1,152 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "HomeStats.dc.html": { "h": 844, "is_interactive": true, "title": "Today · no race set", "w": 390, "x": 470, "y": 0 },
+    "Main.dc.html": { "h": 844, "is_interactive": true, "title": "Today · race mode", "w": 390, "x": 0, "y": 0 },
+    "Nutrition.dc.html": { "h": 844, "is_interactive": true, "title": "Fuel", "w": 390, "x": 940, "y": 0 },
+    "Plan.dc.html": { "h": 844, "is_interactive": true, "title": "Plan", "w": 390, "x": 1410, "y": 0 },
+
+    "Welcome.dc.html": { "h": 844, "is_interactive": true, "title": "1 · Welcome", "w": 390, "x": 0, "y": 1300 },
+    "Connected.dc.html": { "h": 844, "is_interactive": true, "title": "2 · Strava connected", "w": 390, "x": 470, "y": 1300 },
+    "AboutYou.dc.html": { "h": 844, "is_interactive": true, "title": "3 · About you", "w": 390, "x": 940, "y": 1300 },
+    "Goal.dc.html": { "h": 844, "is_interactive": true, "title": "4 · Your goal", "w": 390, "x": 1410, "y": 1300 },
+    "PlanPreview.dc.html": { "h": 844, "is_interactive": true, "title": "5 · Your plan", "w": 390, "x": 1880, "y": 1300 },
+
+    "TodayFuel.dc.html": { "h": 844, "is_interactive": true, "title": "Today · fuel view", "w": 390, "x": 0, "y": 2600 },
+    "Log.dc.html": { "h": 844, "is_interactive": true, "title": "Log", "w": 390, "x": 470, "y": 2600 },
+    "Nutrients.dc.html": { "h": 844, "is_interactive": true, "title": "Nutrients", "w": 390, "x": 940, "y": 2600 },
+    "Week.dc.html": { "h": 844, "is_interactive": true, "title": "This week", "w": 390, "x": 1410, "y": 2600 },
+
+    "PlanUpdated.dc.html": { "h": 844, "is_interactive": true, "title": "Plan updated · from Strava", "w": 390, "x": 0, "y": 3900 },
+    "Recap.dc.html": { "h": 844, "is_interactive": true, "title": "Recap · yesterday", "w": 390, "x": 470, "y": 3900 },
+    "Coach.dc.html": { "h": 844, "is_interactive": true, "title": "Coach · proposal", "w": 390, "x": 940, "y": 3900 },
+    "CoachFollowUp.dc.html": { "h": 844, "is_interactive": true, "title": "Coach · after update", "w": 390, "x": 1410, "y": 3900 },
+
+    "HowItAdapts.dc.html": { "h": 660, "title": "How the plan adapts", "w": 1280, "x": 0, "y": 5200 }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-19T19:47:19.857Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "n1": {
+      "color": "orange",
+      "maxH": 110,
+      "text": "Home when a race is set. Live countdown to race day, today's run (tap Mark as done), weekly mileage against plan, recovery, fuel peek.",
+      "w": 390,
+      "x": 0,
+      "y": -200
+    },
+    "n2": {
+      "color": "teal",
+      "maxH": 110,
+      "text": "Home with no race. Week vs. last week, progress chart (tap 4 wks / 12 wks / 6 mo), personal bests, and a gentle nudge to add a race.",
+      "w": 390,
+      "x": 470,
+      "y": -200
+    },
+    "n3": {
+      "color": "green",
+      "maxH": 110,
+      "text": "Fuel. Calories and macros against run-day targets, hydration (tap +250 ml), meal log with a working quick-add sheet (+ button).",
+      "w": 390,
+      "x": 940,
+      "y": -200
+    },
+    "n4": {
+      "color": "purple",
+      "maxH": 110,
+      "text": "Plan. Tap any day for its workout, an adaptive suggestion you can apply or keep, and the whole 18-week block at a glance.",
+      "w": 390,
+      "x": 1410,
+      "y": -200
+    },
+    "title": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "Run training app · v1 wireframe",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "title2": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "Onboarding · connect, profile, goal, plan",
+      "x": 0,
+      "y": 980
+    },
+    "n5": {
+      "color": "orange",
+      "maxH": 110,
+      "text": "Play from Welcome to walk the whole flow. Distance tiles, the run-days stepper and the sex selector work; the goal-pace note recomputes per distance.",
+      "w": 860,
+      "x": 0,
+      "y": 1100
+    },
+    "title3": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "Core loop · fuel follows the workout",
+      "x": 0,
+      "y": 2280
+    },
+    "n6": {
+      "color": "green",
+      "maxH": 110,
+      "text": "Rings and targets are the same numbers on Today, Log and Nutrients. On Log, tap Log next to Dinner: the remaining kcal and macros update. On This week, tap any day.",
+      "w": 860,
+      "x": 0,
+      "y": 2400
+    },
+    "title4": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "Adaptive moments · Strava, recap, coach",
+      "x": 0,
+      "y": 3580
+    },
+    "n7": {
+      "color": "purple",
+      "maxH": 110,
+      "text": "Plan updated and Recap are the two push-in sheets. Coach carries the injury conversation: tap Update my plan to see the confirmation and the follow-up about food.",
+      "w": 860,
+      "x": 0,
+      "y": 3700
+    },
+    "title5": {
+      "kind": "title1",
+      "maxW": 1280,
+      "text": "System · how the plan adapts",
+      "x": 0,
+      "y": 4880
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "HomeStats.dc.html",
+    "Nutrition.dc.html",
+    "Plan.dc.html",
+    "Welcome.dc.html",
+    "Connected.dc.html",
+    "AboutYou.dc.html",
+    "Goal.dc.html",
+    "PlanPreview.dc.html",
+    "TodayFuel.dc.html",
+    "Log.dc.html",
+    "Nutrients.dc.html",
+    "Week.dc.html",
+    "PlanUpdated.dc.html",
+    "Recap.dc.html",
+    "Coach.dc.html",
+    "CoachFollowUp.dc.html",
+    "HowItAdapts.dc.html"
+  ],
+  "pages": [],
+  "title": "Run training app · v1 wireframe"
+}

@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Bubbie",
+    "slug": "bubbie",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "bubbie",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "backgroundColor": "#F6F5F1",
+    "splash": {
+      "backgroundColor": "#F6F5F1",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.bubbie.run",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Bubbie reads your runs, heart rate and workouts to shape your plan and fueling.",
+        "NSHealthUpdateUsageDescription": "Bubbie writes nutrition you log so it shows up in Apple Health."
+      }
+    },
+    "android": {
+      "package": "app.bubbie.run",
+      "adaptiveIcon": {
+        "backgroundColor": "#F6F5F1"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6F5F1"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

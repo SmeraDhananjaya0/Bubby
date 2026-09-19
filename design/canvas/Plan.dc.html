@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan — this week and the block</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F1}
+a{color:#1F3FC9;text-decoration:none}a:hover{color:#1733A8}
+.scroll{scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; font-family: 'Manrope', system-ui, sans-serif; color: #1B1A19; background: radial-gradient(90% 40% at 4% -4%, rgba(180, 170, 250, 0.40) 0%, rgba(180, 170, 250, 0) 70%), radial-gradient(80% 36% at 100% 0%, rgba(110, 140, 250, 0.36) 0%, rgba(110, 140, 250, 0) 70%), radial-gradient(70% 28% at 55% 14%, rgba(150, 190, 250, 0.26) 0%, rgba(150, 190, 250, 0) 70%), #F6F5F1;">
+
+  <div class="scroll" style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; box-sizing: border-box; overflow-y: auto; padding: 62px 20px 132px 20px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 6px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6F6E67;">Week 9 of 18 · Build</div>
+        <h1 style="margin: 0; font-size: 36px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em;">Plan</h1>
+      </div>
+      <button onClick="{{goToday}}" style="height: 36px; padding: 0px 14px; border: 0px; border-radius: 18px; background: rgba(255, 255, 255, 0.85); color: #1B1A19; font-size: 13px; font-weight: 700; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.08);">Today</button>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 12px 12px 12px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0px 6px;">
+        <div style="font-size: 15px; font-weight: 700;">Sep 14 – 20</div>
+        <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">42 mi planned · 23.2 done</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px;">
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+          <button onClick="{{d.pick}}" aria-label="{{d.aria}}" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0px 8px 0px; border: 0px; border-radius: 16px; background: transparent;">
+            <span style="font-size: 11px; font-weight: 700; color: {{d.dowColor}};">{{d.dow}}</span>
+            <span style="width: 36px; height: 36px; border-radius: 18px; background: {{d.numBg}}; color: {{d.numColor}}; box-shadow: {{d.numRing}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800;">{{d.num}}</span>
+            <span style="width: 8px; height: 8px; border-radius: 4px; background: {{d.dot}};"></span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="padding: 5px 10px; border-radius: 999px; background: {{sel.chipBg}}; color: {{sel.chipColor}}; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;">{{sel.typeLabel}}</div>
+        <div style="font-size: 13px; font-weight: 600; color: #6F6E67;">{{sel.when}}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 26px; line-height: 30px; font-weight: 800; letter-spacing: -0.02em;">{{sel.title}}</div>
+        <div style="font-size: 14px; line-height: 20px; font-weight: 500; color: #5E5D58;">{{sel.desc}}</div>
+      </div>
+
+      <sc-if value="{{sel.isRun}}" hint-placeholder-val="{{true}}">
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+          <div style="padding: 10px 12px; border-radius: 14px; background: #FAF9F5; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 11px; font-weight: 700; color: #6F6E67; letter-spacing: 0.04em; text-transform: uppercase;">Distance</div>
+            <div style="font-size: 16px; font-weight: 800; letter-spacing: -0.01em;">{{sel.dist}}</div>
+          </div>
+          <div style="padding: 10px 12px; border-radius: 14px; background: #FAF9F5; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 11px; font-weight: 700; color: #6F6E67; letter-spacing: 0.04em; text-transform: uppercase;">Pace</div>
+            <div style="font-size: 15px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;">{{sel.pace}}</div>
+          </div>
+          <div style="padding: 10px 12px; border-radius: 14px; background: #FAF9F5; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 11px; font-weight: 700; color: #6F6E67; letter-spacing: 0.04em; text-transform: uppercase;">Fuel</div>
+            <div style="font-size: 15px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;">{{sel.fuel}}</div>
+          </div>
+        </div>
+
+        <sc-if value="{{sel.isDone}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid #F0EFEA;">
+            <div style="width: 28px; height: 28px; border-radius: 14px; background: {{sel.chipBg}}; color: {{sel.chipColor}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; color: #1B1A19;">Completed · <span style="font-weight: 500; color: #5E5D58;">{{sel.done}}</span></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{sel.isUpcoming}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; gap: 8px;">
+            <a href="Main.dc.html" style="flex-grow: 1; height: 46px; border-radius: 15px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center;">Start run</a>
+            <button style="height: 46px; padding: 0px 18px; border: 0px; border-radius: 15px; background: #F3F2EE; color: #1B1A19; font-weight: 700; font-size: 15px;">Move</button>
+          </div>
+        </sc-if>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{showSuggestion}}" hint-placeholder-val="{{true}}">
+      <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 0 0 1px rgba(34, 179, 166, 0.35), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 6px; color: #0E7C74; font-size: 15px; font-weight: 700;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9L12 3z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"></path></svg>
+            <span>Plan suggestion</span>
+          </div>
+          <div style="font-size: 12px; font-weight: 700; color: #0E7C74; background: rgba(34, 179, 166, 0.12); padding: 4px 9px; border-radius: 999px;">Next week</div>
+        </div>
+
+        <sc-if value="{{notApplied}}" hint-placeholder-val="{{true}}">
+          <div style="font-size: 15px; line-height: 22px; font-weight: 500; color: #1B1A19;">Recovery dipped to 61 after Tuesday's tempo. Swap next Tuesday's intervals with Wednesday's easy run so the workout lands on fresher legs.</div>
+          <div style="display: flex; gap: 8px;">
+            <button onClick="{{applySuggestion}}" style="flex-grow: 1; height: 44px; border: 0px; border-radius: 14px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 15px;">Apply</button>
+            <button onClick="{{dismissSuggestion}}" style="height: 44px; padding: 0px 18px; border: 0px; border-radius: 14px; background: #F3F2EE; color: #1B1A19; font-weight: 700; font-size: 15px;">Keep plan</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{applied}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 28px; height: 28px; border-radius: 14px; background: rgba(34, 179, 166, 0.14); color: #0E7C74; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+              </div>
+              <div style="font-size: 14px; line-height: 20px; font-weight: 600;">Applied · <span style="font-weight: 500; color: #5E5D58;">Tue is now Easy 6 mi, Wed is Intervals 7 mi</span></div>
+            </div>
+            <button onClick="{{undoSuggestion}}" style="border: 0px; background: none; color: #0E7C74; font-weight: 700; font-size: 14px; padding: 8px 0px;">Undo</button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F3FC9; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><path d="M4 22v-7"></path></svg>
+          <span>Training block</span>
+        </div>
+        <div style="font-size: 13px; font-weight: 600; color: #6F6E67;">18 weeks · Honolulu</div>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 4px; height: 56px;">
+        <sc-for list="{{block}}" as="b" hint-placeholder-count="18">
+          <div style="flex-grow: 1; height: {{b.h}}px; border-radius: 4px; background: {{b.bg}};"></div>
+        </sc-for>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6F6E67; letter-spacing: 0.04em; text-transform: uppercase;">
+        <span>Base</span>
+        <span>Build</span>
+        <span>Peak</span>
+        <span>Taper</span>
+        <span>Race</span>
+      </div>
+      <div style="font-size: 14px; line-height: 20px; font-weight: 500; color: #5E5D58; padding-top: 10px; border-top: 1px solid #F0EFEA;">Peak of 52 mi in week 14 · taper from week 16 · race day Sun, Dec 13</div>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; align-items: center; gap: 10px;">
+    <nav aria-label="Main" style="flex-grow: 1; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); display: flex; align-items: center; padding: 6px; gap: 4px;">
+      <a href="Main.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"></path></svg>
+        <span>Today</span>
+      </a>
+      <a href="Plan.dc.html" aria-current="page" style="flex-grow: 1; height: 52px; border-radius: 26px; background: rgba(124, 108, 242, 0.14); color: #5B4BD6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+        <span>Plan</span>
+      </a>
+      <a href="Nutrition.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"></path><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"></path></svg>
+        <span>Fuel</span>
+      </a>
+    </nav>
+    <a href="Nutrition.dc.html" aria-label="Quick add" style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); color: #1B1A19; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#2A52F0","options":["#2A52F0","#22B3A6","#7C6CF2","#F5A623"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { selected: 5, suggestion: 'open' };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#2A52F0';
+    const types = {
+      easy: { label: 'Easy run', color: accent, text: '#1F3FC9', tint: 'rgba(42, 82, 240, 0.12)' },
+      workout: { label: 'Workout', color: '#22B3A6', text: '#0E7C74', tint: 'rgba(34, 179, 166, 0.12)' },
+      long: { label: 'Long run', color: '#7C6CF2', text: '#5B4BD6', tint: 'rgba(124, 108, 242, 0.12)' },
+      rest: { label: 'Rest', color: '#DDDCD6', text: '#5E5D58', tint: '#F3F2EE' }
+    };
+    const plan = [
+      { dow: 'Mon', num: 14, type: 'easy', title: 'Easy run', desc: 'Conversational pace. If it feels hard, slow down.', dist: '5 mi', pace: '9:15–9:45', fuel: 'Water', when: 'Mon, Sep 14 · 6:30 AM', done: '5.1 mi · 47:05 · 9:14 /mi' },
+      { dow: 'Tue', num: 15, type: 'workout', title: 'Tempo intervals', desc: '2 mi warm-up · 3 × 1 mi at threshold with 2 min jog · 2 mi cool-down.', dist: '7 mi', pace: '7:55–8:05', fuel: '20 g pre', when: 'Tue, Sep 15 · 6:30 AM', done: '7.0 mi · 58:40 · 8:23 /mi' },
+      { dow: 'Wed', num: 16, type: 'rest', title: 'Rest day', desc: 'Full rest or 20 minutes of mobility. Sleep is training too.', when: 'Wed, Sep 16' },
+      { dow: 'Thu', num: 17, type: 'easy', title: 'Easy run + strides', desc: 'Relaxed miles, then 6 × 20 s strides with full recovery.', dist: '6 mi', pace: '9:15–9:45', fuel: 'Water', when: 'Thu, Sep 17 · 6:30 AM', done: '6.1 mi · 56:10 · 9:12 /mi' },
+      { dow: 'Fri', num: 18, type: 'easy', title: 'Recovery run', desc: 'Shortest, slowest run of the week. Save the legs for Sunday.', dist: '5 mi', pace: '9:30–10:00', fuel: 'Water', when: 'Fri, Sep 18 · 6:30 AM', done: '5.0 mi · 48:30 · 9:42 /mi' },
+      { dow: 'Sat', num: 19, type: 'easy', title: 'Easy run', desc: 'Keep it conversational and stay in Zone 2 the whole way.', dist: '5 mi', pace: '9:15–9:45', fuel: 'Water', when: 'Today · 5:30 PM', today: true },
+      { dow: 'Sun', num: 20, type: 'long', title: 'Long run', desc: 'Steady from the first mile. Practice race-day breakfast, then a gel every 35 minutes.', dist: '14 mi', pace: '9:10–9:40', fuel: '60 g / hr', when: 'Sun, Sep 20 · 7:00 AM' }
+    ];
+    const selected = this.state.selected;
+    const days = plan.map((d, i) => {
+      const t = types[d.type];
+      const isSel = i === selected;
+      return {
+        dow: d.dow,
+        num: d.num,
+        aria: d.dow + ' ' + d.num + ', ' + t.label,
+        pick: () => this.setState({ selected: i }),
+        dowColor: isSel ? '#1B1A19' : '#6F6E67',
+        numBg: isSel ? '#1B1A19' : 'transparent',
+        numColor: isSel ? '#FFFFFF' : '#1B1A19',
+        numRing: (d.today && !isSel) ? 'inset 0 0 0 2px ' + accent : 'none',
+        dot: t.color
+      };
+    });
+    const s = plan[selected];
+    const st = types[s.type];
+    const sel = {
+      typeLabel: st.label,
+      chipBg: st.tint,
+      chipColor: st.text,
+      when: s.when,
+      title: s.title,
+      desc: s.desc,
+      isRun: s.type !== 'rest',
+      dist: s.dist || '',
+      pace: s.pace || '',
+      fuel: s.fuel || '',
+      isDone: !!s.done,
+      done: s.done || '',
+      isUpcoming: s.type !== 'rest' && !s.done
+    };
+
+    const mileage = [24, 27, 30, 32, 28, 35, 38, 40, 42, 45, 48, 44, 50, 52, 40, 32, 24, 14];
+    const currentWeek = 9;
+    const block = mileage.map((m, i) => ({
+      h: Math.max(6, Math.round((m / 52) * 56)),
+      bg: i + 1 < currentWeek ? 'rgba(42, 82, 240, 0.42)' : (i + 1 === currentWeek ? accent : '#ECEBE6')
+    }));
+
+    const sug = this.state.suggestion;
+    return {
+      accent,
+      days,
+      sel,
+      block,
+      goToday: () => this.setState({ selected: 5 }),
+      showSuggestion: sug !== 'dismissed',
+      notApplied: sug === 'open',
+      applied: sug === 'applied',
+      applySuggestion: () => this.setState({ suggestion: 'applied' }),
+      dismissSuggestion: () => this.setState({ suggestion: 'dismissed' }),
+      undoSuggestion: () => this.setState({ suggestion: 'open' })
+    };
+  }
+}
+</script>
+</body>
+</html>

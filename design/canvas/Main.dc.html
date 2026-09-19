@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today — training for a race</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F1}
+a{color:#1F3FC9;text-decoration:none}a:hover{color:#1733A8}
+.scroll{scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; font-family: 'Manrope', system-ui, sans-serif; color: #1B1A19; background: radial-gradient(90% 40% at 6% -4%, rgba(110, 140, 250, 0.42) 0%, rgba(110, 140, 250, 0) 70%), radial-gradient(80% 36% at 100% 0%, rgba(150, 190, 250, 0.42) 0%, rgba(150, 190, 250, 0) 70%), radial-gradient(70% 28% at 55% 14%, rgba(255, 222, 170, 0.34) 0%, rgba(255, 222, 170, 0) 70%), #F6F5F1;">
+
+  <div class="scroll" style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; box-sizing: border-box; overflow-y: auto; padding: 62px 20px 132px 20px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 6px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6F6E67;">{{dateLabel}}</div>
+        <h1 style="margin: 0; font-size: 36px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em;">Today</h1>
+      </div>
+      <a href="Plan.dc.html" aria-label="Profile" style="width: 42px; height: 42px; border-radius: 21px; background: linear-gradient(135deg, #B7C6FF 0%, #BFC9F4 100%); display: flex; align-items: center; justify-content: center; color: #1B1A19; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.08);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+      </a>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F3FC9; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><path d="M4 22v-7"></path></svg>
+          <span>Goal race</span>
+        </div>
+        <a href="Plan.dc.html" style="display: flex; align-items: center; gap: 2px; color: #6F6E67; font-size: 13px; font-weight: 600;">
+          <span>Plan</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </a>
+      </div>
+
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: 32px; line-height: 32px; letter-spacing: -0.01em; color: #1B1A19;">Honolulu Marathon</div>
+          <div style="font-size: 14px; font-weight: 500; color: #5E5D58;">{{raceDateLabel}} · 26.2 mi</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0px;">
+          <div style="font-size: 60px; line-height: 54px; font-weight: 800; letter-spacing: -0.05em; color: {{accent}};">{{daysLeft}}</div>
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6F6E67;">days</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <div style="padding: 6px 11px; border-radius: 999px; background: rgba(42, 82, 240, 0.12); color: #1F3FC9; font-size: 13px; font-weight: 700;">Goal 3:45:00</div>
+        <div style="padding: 6px 11px; border-radius: 999px; background: #F3F2EE; color: #5E5D58; font-size: 13px; font-weight: 700;">8:35 /mi</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #5E5D58;">
+          <span>Week 9 of 18 · Build</span>
+          <span>Peak in 5 wks</span>
+        </div>
+        <div style="display: flex; gap: 3px; height: 8px;">
+          <sc-for list="{{weeks}}" as="w" hint-placeholder-count="18">
+            <div style="flex-grow: 1; border-radius: 4px; background: {{w.bg}};"></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F3FC9; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <span>Today's run</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; color: #6F6E67; font-size: 13px; font-weight: 600;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+          <span>5:30 PM</span>
+        </div>
+      </div>
+
+      <sc-if value="{{notDone}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 26px; line-height: 30px; font-weight: 800; letter-spacing: -0.02em;">Easy run · 5 mi</div>
+          <div style="font-size: 14px; font-weight: 500; color: #5E5D58;">9:15–9:45 /mi · Zone 2 · keep it conversational</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button onClick="{{markDone}}" style="flex-grow: 1; height: 46px; border: 0px; border-radius: 15px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 15px;">Mark as done</button>
+          <a href="Plan.dc.html" style="height: 46px; padding: 0px 18px; border-radius: 15px; background: #F3F2EE; color: #1B1A19; font-weight: 700; font-size: 15px; display: flex; align-items: center;">Details</a>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(42, 82, 240, 0.14); color: #1F3FC9; display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.01em;">Easy run logged</div>
+            <div style="font-size: 14px; font-weight: 500; color: #5E5D58;">5.0 mi · 46:20 · 9:16 /mi</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #F0EFEA;">
+          <div style="font-size: 14px; font-weight: 500; color: #5E5D58;">Up next · <span style="font-weight: 700; color: #1B1A19;">Sun</span> Long run 14 mi</div>
+          <button onClick="{{undo}}" style="border: 0px; background: none; color: #1F3FC9; font-weight: 700; font-size: 14px; padding: 8px 0px;">Undo</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #0E7C74; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+          <span>This week</span>
+        </div>
+        <a href="HomeStats.dc.html" style="display: flex; align-items: center; gap: 2px; color: #6F6E67; font-size: 13px; font-weight: 600;">
+          <span>Trends</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </a>
+      </div>
+
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <div style="font-size: 40px; line-height: 40px; font-weight: 800; letter-spacing: -0.03em;">{{weekMiles}}</div>
+          <div style="font-size: 15px; font-weight: 600; color: #6F6E67;">of 42 mi</div>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: #0E7C74; background: rgba(34, 179, 166, 0.12); padding: 5px 10px; border-radius: 999px;">{{weekPct}}% of plan</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+            <div style="position: relative; width: 100%; height: 64px;">
+              <div style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: {{d.planH}}px; border-radius: 6px; background: #EFEEE9;"></div>
+              <div style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: {{d.doneH}}px; border-radius: 6px; background: {{d.color}};"></div>
+            </div>
+            <div style="font-size: 11px; font-weight: 700; color: {{d.labelColor}};">{{d.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid #F0EFEA;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Runs</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">{{runsDone}}<span style="font-size: 13px; font-weight: 600; color: #6F6E67;"> of 6</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Time</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">{{weekTime}}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Avg pace</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">9:04<span style="font-size: 13px; font-weight: 600; color: #6F6E67;"> /mi</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #5B4BD6; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"></path></svg>
+          <span>Recovery</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">Last night</div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 24px; line-height: 28px; font-weight: 800; letter-spacing: -0.02em;">Ready to train</div>
+          <div style="font-size: 14px; font-weight: 500; color: #5E5D58;">Sleep 7h 42m · HRV 68 ms · RHR 49</div>
+        </div>
+        <div style="position: relative; width: 64px; height: 64px; flex-shrink: 0;">
+          <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="#EFEEE9" stroke-width="7"></circle>
+            <circle cx="32" cy="32" r="26" fill="none" stroke="#7C6CF2" stroke-width="7" stroke-linecap="round" stroke-dasharray="134 164" transform="rotate(-90 32 32)"></circle>
+          </svg>
+          <div style="position: absolute; top: 0px; left: 0px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #5B4BD6;">82</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="Nutrition.dc.html" style="color: #1B1A19; background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F7F4A; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"></path><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"></path></svg>
+          <span>Fuel</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px; color: #6F6E67; font-size: 13px; font-weight: 600;">
+          <span>Today</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </div>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 6px;">
+        <div style="font-size: 32px; line-height: 34px; font-weight: 800; letter-spacing: -0.03em;">1,840</div>
+        <div style="font-size: 15px; font-weight: 600; color: #6F6E67;">of 2,600 kcal</div>
+      </div>
+      <div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #EFEEE9; gap: 2px;">
+        <div style="width: 36%; background: #F5A623;"></div>
+        <div style="width: 17%; background: #7C6CF2;"></div>
+        <div style="width: 18%; background: #46A3EA;"></div>
+      </div>
+      <div style="display: flex; gap: 14px; font-size: 13px; font-weight: 600; color: #5E5D58;">
+        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #F5A623;"></span><span>Carbs 235 g</span></div>
+        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #7C6CF2;"></span><span>Protein 110 g</span></div>
+        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #46A3EA;"></span><span>Fat 51 g</span></div>
+      </div>
+    </a>
+
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; align-items: center; gap: 10px;">
+    <nav aria-label="Main" style="flex-grow: 1; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); display: flex; align-items: center; padding: 6px; gap: 4px;">
+      <a href="Main.dc.html" aria-current="page" style="flex-grow: 1; height: 52px; border-radius: 26px; background: rgba(42, 82, 240, 0.14); color: #1F3FC9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"></path></svg>
+        <span>Today</span>
+      </a>
+      <a href="Plan.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+        <span>Plan</span>
+      </a>
+      <a href="Nutrition.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"></path><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"></path></svg>
+        <span>Fuel</span>
+      </a>
+    </nav>
+    <a href="Nutrition.dc.html" aria-label="Quick add" style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); color: #1B1A19; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#2A52F0","options":["#2A52F0","#22B3A6","#7C6CF2","#F5A623"]},"raceDate":{"editor":"text","default":"2026-12-13"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { done: false };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#2A52F0';
+    const raceStr = this.props.raceDate ?? '2026-12-13';
+    const race = new Date(raceStr + 'T00:00:00');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const valid = !isNaN(race.getTime());
+    const daysLeft = valid ? Math.max(0, Math.round((race - today) / 86400000)) : '—';
+    const raceDateLabel = valid ? race.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Set a date';
+    const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const currentWeek = 9, totalWeeks = 18;
+    const weeks = [];
+    for (let i = 1; i <= totalWeeks; i++) {
+      weeks.push({ bg: i < currentWeek ? accent : (i === currentWeek ? 'rgba(42, 82, 240, 0.45)' : '#ECEBE6') });
+    }
+
+    const done = this.state.done;
+    const plan = [
+      { label: 'M', plan: 5, done: 5.1 },
+      { label: 'T', plan: 7, done: 7.0 },
+      { label: 'W', plan: 0, done: 0 },
+      { label: 'T', plan: 6, done: 6.1 },
+      { label: 'F', plan: 5, done: 5.0 },
+      { label: 'S', plan: 5, done: done ? 5.0 : 0, today: true },
+      { label: 'S', plan: 14, done: 0 }
+    ];
+    const maxPlan = 14, maxH = 64;
+    const days = plan.map((d) => ({
+      label: d.label,
+      planH: d.plan === 0 ? 6 : Math.round((d.plan / maxPlan) * maxH),
+      doneH: Math.round((d.done / maxPlan) * maxH),
+      color: d.today ? accent : '#22B3A6',
+      labelColor: d.today ? '#1B1A19' : '#6F6E67'
+    }));
+    const miles = plan.reduce((s, d) => s + d.done, 0);
+    const runsDone = plan.filter((d) => d.done > 0).length;
+    const weekMinutes = 206 + (done ? 46 : 0);
+
+    return {
+      accent,
+      dateLabel,
+      raceDateLabel,
+      daysLeft,
+      weeks,
+      days,
+      notDone: !done,
+      isDone: done,
+      markDone: () => this.setState({ done: true }),
+      undo: () => this.setState({ done: false }),
+      weekMiles: miles.toFixed(1),
+      weekPct: Math.round((miles / 42) * 100),
+      runsDone,
+      weekTime: Math.floor(weekMinutes / 60) + 'h ' + (weekMinutes % 60) + 'm'
+    };
+  }
+}
+</script>
+</body>
+</html>

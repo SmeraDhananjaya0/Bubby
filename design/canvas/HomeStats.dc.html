@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today — no race set</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F1}
+a{color:#0E7C74;text-decoration:none}a:hover{color:#0A5F59}
+.scroll{scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; font-family: 'Manrope', system-ui, sans-serif; color: #1B1A19; background: radial-gradient(90% 40% at 4% -4%, rgba(120, 210, 200, 0.42) 0%, rgba(120, 210, 200, 0) 70%), radial-gradient(80% 36% at 100% 0%, rgba(180, 170, 250, 0.42) 0%, rgba(180, 170, 250, 0) 70%), radial-gradient(70% 28% at 55% 14%, rgba(255, 222, 170, 0.28) 0%, rgba(255, 222, 170, 0) 70%), #F6F5F1;">
+
+  <div class="scroll" style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; box-sizing: border-box; overflow-y: auto; padding: 62px 20px 132px 20px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 6px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6F6E67;">{{dateLabel}}</div>
+        <h1 style="margin: 0; font-size: 36px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em;">Today</h1>
+      </div>
+      <a href="Plan.dc.html" aria-label="Profile" style="width: 42px; height: 42px; border-radius: 21px; background: linear-gradient(135deg, #A9DDD6 0%, #C7C2F5 100%); display: flex; align-items: center; justify-content: center; color: #1B1A19; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.08);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+      </a>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #0E7C74; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <span>This week</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">Mon – Sun</div>
+      </div>
+
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <div style="font-size: 48px; line-height: 46px; font-weight: 800; letter-spacing: -0.04em;">24.6</div>
+          <div style="font-size: 16px; font-weight: 600; color: #6F6E67;">mi</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #0E7C74; background: rgba(34, 179, 166, 0.12); padding: 5px 10px; border-radius: 999px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+          <span>12% vs last week</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+            <div style="position: relative; width: 100%; height: 64px;">
+              <div style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: {{d.lastH}}px; border-radius: 6px; background: #EFEEE9;"></div>
+              <div style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: {{d.thisH}}px; border-radius: 6px; background: {{d.color}};"></div>
+            </div>
+            <div style="font-size: 11px; font-weight: 700; color: {{d.labelColor}};">{{d.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid #F0EFEA;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Runs</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">4</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Time</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">3h 41m</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Avg pace</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">9:00<span style="font-size: 13px; font-weight: 600; color: #6F6E67;"> /mi</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #5B4BD6; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+          <span>Progress</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">Weekly miles</div>
+      </div>
+
+      <div role="group" aria-label="Time range" style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #F3F2EE;">
+        <sc-for list="{{ranges}}" as="r" hint-placeholder-count="3">
+          <button onClick="{{r.pick}}" style="flex-grow: 1; height: 32px; border: 0px; border-radius: 9px; background: {{r.bg}}; color: {{r.color}}; box-shadow: {{r.shadow}}; font-weight: 700; font-size: 13px;">{{r.label}}</button>
+        </sc-for>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <svg width="314" height="120" viewBox="0 0 314 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7C6CF2" stop-opacity="0.28"></stop>
+              <stop offset="100%" stop-color="#7C6CF2" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+          <line x1="0" y1="98" x2="314" y2="98" stroke="#EFEEE9" stroke-width="1"></line>
+          <line x1="0" y1="54" x2="314" y2="54" stroke="#F3F2EE" stroke-width="1" stroke-dasharray="3 4"></line>
+          <path d="{{areaPath}}" fill="url(#fillGrad)"></path>
+          <path d="{{linePath}}" fill="none" stroke="#7C6CF2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          <circle cx="{{lastX}}" cy="{{lastY}}" r="5" fill="#FFFFFF" stroke="#7C6CF2" stroke-width="2.5"></circle>
+        </svg>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6F6E67; letter-spacing: 0.04em; text-transform: uppercase;">
+          <span>{{startLabel}}</span>
+          <span>This week</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid #F0EFEA;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Total</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">{{rangeTotal}}<span style="font-size: 13px; font-weight: 600; color: #6F6E67;"> mi</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Avg / week</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">{{rangeAvg}}<span style="font-size: 13px; font-weight: 600; color: #6F6E67;"> mi</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6F6E67;">Best week</div>
+          <div style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">{{rangeBest}}<span style="font-size: 13px; font-weight: 600; color: #6F6E67;"> mi</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #E6ECFF; border-radius: 24px; padding: 18px 18px 18px 18px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: 28px; line-height: 30px; color: #1B1A19;">Training for something?</div>
+          <div style="font-size: 14px; line-height: 20px; font-weight: 500; color: #5E5D58;">Add a race and the next 12–18 weeks get shaped around it — long runs, workouts and fueling included.</div>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 20px; background: #FFFFFF; color: #1F3FC9; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><path d="M4 22v-7"></path></svg>
+        </div>
+      </div>
+      <a href="Main.dc.html" style="align-self: flex-start; height: 44px; padding: 0px 18px; border-radius: 14px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+        <span>Add a race</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+      </a>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #A65E00; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          <span>Personal bests</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">All time</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 12px; border-radius: 16px; background: #FAF9F5;">
+          <div style="font-size: 12px; font-weight: 700; color: #6F6E67;">5K</div>
+          <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">22:48</div>
+          <div style="font-size: 11px; font-weight: 600; color: #6F6E67;">Jun 2026</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 12px; border-radius: 16px; background: #FAF9F5;">
+          <div style="font-size: 12px; font-weight: 700; color: #6F6E67;">10K</div>
+          <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">47:31</div>
+          <div style="font-size: 11px; font-weight: 600; color: #6F6E67;">Aug 2026</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 12px; border-radius: 16px; background: #FAF9F5;">
+          <div style="font-size: 12px; font-weight: 700; color: #6F6E67;">Half</div>
+          <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">1:46:12</div>
+          <div style="font-size: 11px; font-weight: 600; color: #6F6E67;">Mar 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #5B4BD6; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"></path></svg>
+          <span>Recovery</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">Last night</div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 24px; line-height: 28px; font-weight: 800; letter-spacing: -0.02em;">Ready to train</div>
+          <div style="font-size: 14px; font-weight: 500; color: #5E5D58;">Sleep 7h 42m · HRV 68 ms · RHR 49</div>
+        </div>
+        <div style="position: relative; width: 64px; height: 64px; flex-shrink: 0;">
+          <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="#EFEEE9" stroke-width="7"></circle>
+            <circle cx="32" cy="32" r="26" fill="none" stroke="#7C6CF2" stroke-width="7" stroke-linecap="round" stroke-dasharray="134 164" transform="rotate(-90 32 32)"></circle>
+          </svg>
+          <div style="position: absolute; top: 0px; left: 0px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #5B4BD6;">82</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; align-items: center; gap: 10px;">
+    <nav aria-label="Main" style="flex-grow: 1; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); display: flex; align-items: center; padding: 6px; gap: 4px;">
+      <a href="HomeStats.dc.html" aria-current="page" style="flex-grow: 1; height: 52px; border-radius: 26px; background: rgba(34, 179, 166, 0.14); color: #0E7C74; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"></path></svg>
+        <span>Today</span>
+      </a>
+      <a href="Plan.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+        <span>Plan</span>
+      </a>
+      <a href="Nutrition.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"></path><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"></path></svg>
+        <span>Fuel</span>
+      </a>
+    </nav>
+    <a href="Nutrition.dc.html" aria-label="Quick add" style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); color: #1B1A19; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#22B3A6","options":["#22B3A6","#2A52F0","#7C6CF2","#F5A623"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { range: '12W' };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#22B3A6';
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const thisWeek = [5.2, 6.4, 0, 7.1, 0, 5.9, 0];
+    const lastWeek = [4.8, 5.5, 0, 6.2, 5.4, 0, 0];
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const maxH = 64, maxMi = 8;
+    const days = labels.map((label, i) => ({
+      label,
+      thisH: Math.round((thisWeek[i] / maxMi) * maxH),
+      lastH: lastWeek[i] === 0 ? 6 : Math.round((lastWeek[i] / maxMi) * maxH),
+      color: i === 5 ? accent : 'rgba(34, 179, 166, 0.55)',
+      labelColor: i === 5 ? '#1B1A19' : '#6F6E67'
+    }));
+
+    const series = {
+      '4W': [28.0, 25.0, 21.9, 24.6],
+      '12W': [16.5, 18.0, 21.0, 19.5, 24.0, 22.0, 26.0, 23.5, 28.0, 25.0, 21.9, 24.6],
+      '6M': [10.0, 12.0, 14.0, 13.5, 15.0, 17.0, 16.0, 18.5, 20.0, 19.0, 22.0, 21.0, 12.0, 15.5, 16.5, 18.0, 21.0, 19.5, 24.0, 22.0, 26.0, 23.5, 28.0, 25.0, 21.9, 24.6]
+    };
+    const startLabels = { '4W': '4 wks ago', '12W': '12 wks ago', '6M': '6 months ago' };
+    const range = this.state.range;
+    const vals = series[range];
+
+    const W = 314, top = 10, base = 98;
+    const min = Math.min(...vals) - 3, max = Math.max(...vals) + 3;
+    const pts = vals.map((v, i) => [
+      (i / (vals.length - 1)) * W,
+      top + (1 - (v - min) / (max - min)) * (base - top)
+    ]);
+    let line = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      line += ' C' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ' ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+    }
+    const area = line + ' L' + W + ' ' + base + ' L0 ' + base + ' Z';
+    const last = pts[pts.length - 1];
+    const total = vals.reduce((s, v) => s + v, 0);
+
+    const ranges = [
+      { k: '4W', label: '4 wks' },
+      { k: '12W', label: '12 wks' },
+      { k: '6M', label: '6 mo' }
+    ].map((r) => ({
+      ...r,
+      pick: () => this.setState({ range: r.k }),
+      bg: r.k === range ? '#FFFFFF' : 'transparent',
+      color: r.k === range ? '#1B1A19' : '#6F6E67',
+      shadow: r.k === range ? '0 1px 3px rgba(27, 26, 25, 0.12)' : 'none'
+    }));
+
+    return {
+      accent,
+      dateLabel,
+      days,
+      ranges,
+      linePath: line,
+      areaPath: area,
+      lastX: last[0].toFixed(1),
+      lastY: last[1].toFixed(1),
+      startLabel: startLabels[range],
+      rangeTotal: Math.round(total),
+      rangeAvg: (total / vals.length).toFixed(1),
+      rangeBest: Math.max(...vals).toFixed(1)
+    };
+  }
+}
+</script>
+</body>
+</html>

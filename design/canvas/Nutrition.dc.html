@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fuel — nutrition for today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F1}
+a{color:#1F7F4A;text-decoration:none}a:hover{color:#176439}
+.scroll{scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; font-family: 'Manrope', system-ui, sans-serif; color: #1B1A19; background: radial-gradient(90% 40% at 4% -4%, rgba(150, 220, 170, 0.42) 0%, rgba(150, 220, 170, 0) 70%), radial-gradient(80% 36% at 100% 0%, rgba(255, 205, 120, 0.40) 0%, rgba(255, 205, 120, 0) 70%), radial-gradient(70% 28% at 55% 14%, rgba(150, 190, 250, 0.22) 0%, rgba(150, 190, 250, 0) 70%), #F6F5F1;">
+
+  <div class="scroll" style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; box-sizing: border-box; overflow-y: auto; padding: 62px 20px 132px 20px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 6px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6F6E67;">{{dateLabel}}</div>
+        <h1 style="margin: 0; font-size: 36px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em;">Fuel</h1>
+      </div>
+      <button style="height: 36px; padding: 0px 14px; border: 0px; border-radius: 18px; background: rgba(255, 255, 255, 0.85); color: #1B1A19; font-size: 13px; font-weight: 700; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.08);">Goals</button>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F7F4A; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+          <span>Energy</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">Today</div>
+      </div>
+
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <div style="font-size: 48px; line-height: 46px; font-weight: 800; letter-spacing: -0.04em;">{{eaten}}</div>
+          <div style="font-size: 15px; font-weight: 600; color: #6F6E67;">of {{goal}} kcal</div>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: #1F7F4A; background: rgba(61, 184, 119, 0.14); padding: 5px 10px; border-radius: 999px;">{{remaining}} left</div>
+      </div>
+
+      <div style="height: 10px; border-radius: 5px; background: #EFEEE9; overflow: hidden;">
+        <div style="height: 10px; width: {{pct}}%; border-radius: 5px; background: {{accent}};"></div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(245, 166, 35, 0.12);">
+        <div style="color: #A65E00; display: flex; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+        </div>
+        <div style="font-size: 13px; line-height: 18px; font-weight: 600; color: #7A4600;">Long run tomorrow — carb target raised to 380 g today.</div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #A65E00; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <span>Macros</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;">Run-day targets</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div style="font-size: 14px; font-weight: 700;">Carbs</div>
+            <div style="font-size: 13px; font-weight: 600; color: #6F6E67;"><span style="font-weight: 800; color: #1B1A19;">{{carbs}}</span> / 380 g</div>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: #EFEEE9; overflow: hidden;">
+            <div style="height: 8px; width: {{carbsPct}}%; border-radius: 4px; background: #F5A623;"></div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div style="font-size: 14px; font-weight: 700;">Protein</div>
+            <div style="font-size: 13px; font-weight: 600; color: #6F6E67;"><span style="font-weight: 800; color: #1B1A19;">{{protein}}</span> / 150 g</div>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: #EFEEE9; overflow: hidden;">
+            <div style="height: 8px; width: {{proteinPct}}%; border-radius: 4px; background: #7C6CF2;"></div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div style="font-size: 14px; font-weight: 700;">Fat</div>
+            <div style="font-size: 13px; font-weight: 600; color: #6F6E67;"><span style="font-weight: 800; color: #1B1A19;">{{fat}}</span> / 80 g</div>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: #EFEEE9; overflow: hidden;">
+            <div style="height: 8px; width: {{fatPct}}%; border-radius: 4px; background: #46A3EA;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 18px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F6FB5; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+          <span>Hydration</span>
+        </div>
+        <div style="color: #6F6E67; font-size: 13px; font-weight: 600;"><span style="font-weight: 800; color: #1B1A19;">{{waterL}}</span> of 3.0 L</div>
+      </div>
+      <div style="display: flex; gap: 4px; height: 16px;">
+        <sc-for list="{{glasses}}" as="g" hint-placeholder-count="12">
+          <div style="flex-grow: 1; border-radius: 5px; background: {{g.bg}};"></div>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <button onClick="{{addWater}}" style="height: 40px; padding: 0px 16px; border: 0px; border-radius: 13px; background: rgba(70, 163, 234, 0.14); color: #1F6FB5; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          <span>250 ml</span>
+        </button>
+        <button onClick="{{removeWater}}" style="height: 40px; padding: 0px 10px; border: 0px; border-radius: 13px; background: none; color: #6F6E67; font-weight: 700; font-size: 14px;">Undo</button>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px 18px 10px 18px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #1F7F4A; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3zm0 0v7"></path></svg>
+          <span>Today's log</span>
+        </div>
+        <button onClick="{{openAdd}}" style="height: 32px; padding: 0px 12px; border: 0px; border-radius: 16px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 4px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          <span>Add</span>
+        </button>
+      </div>
+      <sc-for list="{{meals}}" as="m" hint-placeholder-count="4">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0px; border-top: 1px solid #F0EFEA;">
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0px;">
+            <div style="font-size: 15px; font-weight: 700;">{{m.name}}</div>
+            <div style="font-size: 12px; font-weight: 500; color: #6F6E67;">{{m.meta}}</div>
+          </div>
+          <div style="font-size: 15px; font-weight: 800; white-space: nowrap;">{{m.kcal}}<span style="font-size: 12px; font-weight: 600; color: #6F6E67;"> kcal</span></div>
+        </div>
+      </sc-for>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; align-items: center; gap: 10px;">
+    <nav aria-label="Main" style="flex-grow: 1; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); display: flex; align-items: center; padding: 6px; gap: 4px;">
+      <a href="Main.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"></path></svg>
+        <span>Today</span>
+      </a>
+      <a href="Plan.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+        <span>Plan</span>
+      </a>
+      <a href="Nutrition.dc.html" aria-current="page" style="flex-grow: 1; height: 52px; border-radius: 26px; background: rgba(61, 184, 119, 0.16); color: #1F7F4A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"></path><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"></path></svg>
+        <span>Fuel</span>
+      </a>
+    </nav>
+    <button onClick="{{openAdd}}" aria-label="Quick add food" style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); color: #1B1A19; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </button>
+  </div>
+
+  <sc-if value="{{showAdd}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; display: flex; flex-direction: column; justify-content: flex-end;">
+      <button onClick="{{closeAdd}}" aria-label="Close" style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; border: 0px; background: rgba(27, 26, 25, 0.32);"></button>
+      <div style="position: relative; background: #FFFFFF; border-radius: 28px 28px 0px 0px; padding: 10px 20px 34px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 -10px 40px rgba(27, 26, 25, 0.14);">
+        <div style="width: 40px; height: 5px; border-radius: 3px; background: #E4E3DD; align-self: center;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">Add food</div>
+            <div style="font-size: 13px; font-weight: 500; color: #6F6E67;">Logged at the current time · {{remaining}} kcal left today</div>
+          </div>
+          <button onClick="{{closeAdd}}" aria-label="Close" style="width: 36px; height: 36px; border: 0px; border-radius: 18px; background: #F3F2EE; color: #1B1A19; display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <label for="food-search" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0px 14px; border-radius: 14px; background: #F3F2EE; color: #6F6E67;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <input id="food-search" type="text" placeholder="Search foods" style="flex-grow: 1; border: 0px; background: transparent; font: inherit; font-size: 15px; color: #1B1A19; outline: none;">
+        </label>
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6F6E67;">Quick add</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <sc-for list="{{foods}}" as="f" hint-placeholder-count="8">
+            <button onClick="{{f.add}}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 12px 14px; border: 0px; border-radius: 16px; background: #FAF9F5; text-align: left; color: #1B1A19;">
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0px;">
+                <span style="font-size: 14px; font-weight: 700;">{{f.name}}</span>
+                <span style="font-size: 11px; font-weight: 600; color: #6F6E67;">{{f.kcal}} kcal · {{f.macros}}</span>
+              </span>
+              <span style="width: 28px; height: 28px; border-radius: 14px; background: rgba(61, 184, 119, 0.16); color: #1F7F4A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+        <button onClick="{{closeAdd}}" style="height: 48px; border: 0px; border-radius: 15px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 15px;">Done</button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#3DB877","options":["#3DB877","#2A52F0","#22B3A6","#F5A623"]},"calorieGoal":{"editor":"int","default":2600,"min":1200,"max":5000,"step":50,"unit":"kcal"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      meals: [
+        { name: 'Oats, banana & peanut butter', time: '7:10 AM', kcal: 520, c: 72, p: 16, f: 18 },
+        { name: 'Chicken rice bowl', time: '12:40 PM', kcal: 710, c: 88, p: 48, f: 18 },
+        { name: 'Greek yogurt & berries', time: '3:30 PM', kcal: 210, c: 24, p: 20, f: 5 },
+        { name: 'Recovery shake', time: '6:40 PM', kcal: 400, c: 51, p: 26, f: 10 }
+      ],
+      water: 1.75,
+      showAdd: false
+    };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#3DB877';
+    const goal = this.props.calorieGoal ?? 2600;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const meals = this.state.meals;
+    const sum = (k) => meals.reduce((s, m) => s + m[k], 0);
+    const eaten = sum('kcal'), carbs = sum('c'), protein = sum('p'), fat = sum('f');
+    const pct = (v, g) => Math.min(100, Math.round((v / g) * 100));
+
+    const foods = [
+      { name: 'Banana', kcal: 105, c: 27, p: 1, f: 0 },
+      { name: 'Oatmeal bowl', kcal: 300, c: 54, p: 10, f: 5 },
+      { name: 'Bagel & peanut butter', kcal: 420, c: 56, p: 14, f: 16 },
+      { name: 'Salmon & rice', kcal: 640, c: 70, p: 38, f: 20 },
+      { name: 'Sweet potato', kcal: 180, c: 41, p: 4, f: 0 },
+      { name: 'Recovery shake', kcal: 400, c: 51, p: 26, f: 10 },
+      { name: 'Trail mix', kcal: 280, c: 22, p: 8, f: 19 },
+      { name: 'Electrolyte drink', kcal: 80, c: 20, p: 0, f: 0 }
+    ].map((f) => ({
+      ...f,
+      macros: 'C ' + f.c + ' · P ' + f.p + ' · F ' + f.f,
+      add: () => {
+        const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        this.setState({ meals: [...this.state.meals, { name: f.name, time, kcal: f.kcal, c: f.c, p: f.p, f: f.f }] });
+      }
+    }));
+
+    const water = this.state.water;
+    const filled = Math.round(water / 0.25);
+    const glasses = [];
+    for (let i = 0; i < 12; i++) glasses.push({ bg: i < filled ? '#46A3EA' : '#EFEEE9' });
+
+    return {
+      accent,
+      dateLabel,
+      goal: goal.toLocaleString('en-US'),
+      eaten: eaten.toLocaleString('en-US'),
+      remaining: Math.max(0, goal - eaten).toLocaleString('en-US'),
+      pct: pct(eaten, goal),
+      carbs, protein, fat,
+      carbsPct: pct(carbs, 380),
+      proteinPct: pct(protein, 150),
+      fatPct: pct(fat, 80),
+      waterL: water.toFixed(2).replace(/0$/, ''),
+      glasses,
+      addWater: () => this.setState({ water: Math.min(4, this.state.water + 0.25) }),
+      removeWater: () => this.setState({ water: Math.max(0, this.state.water - 0.25) }),
+      meals: meals.map((m) => ({ name: m.name, kcal: m.kcal, meta: m.time + ' · C ' + m.c + ' · P ' + m.p + ' · F ' + m.f })),
+      foods,
+      showAdd: this.state.showAdd,
+      openAdd: () => this.setState({ showAdd: true }),
+      closeAdd: () => this.setState({ showAdd: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coach — tell it what changed, approve the new plan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F1}
+a{color:#0E7C74;text-decoration:none}a:hover{color:#0A5F59}
+.scroll{scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; font-family: 'Manrope', system-ui, sans-serif; color: #1B1A19; background: radial-gradient(90% 40% at 4% -4%, rgba(120, 210, 200, 0.42) 0%, rgba(120, 210, 200, 0) 70%), radial-gradient(80% 36% at 100% 0%, rgba(180, 170, 250, 0.42) 0%, rgba(180, 170, 250, 0) 70%), radial-gradient(70% 28% at 55% 14%, rgba(255, 222, 170, 0.28) 0%, rgba(255, 222, 170, 0) 70%), #F6F5F1;">
+
+  <div class="scroll" style="position: absolute; top: 0px; left: 0px; width: 390px; height: 844px; box-sizing: border-box; overflow-y: auto; padding: 62px 20px 176px 20px; display: flex; flex-direction: column; gap: 18px;">
+
+    <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;">
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6F6E67;">{{dateLabel}}</div>
+      <h1 style="margin: 0; font-size: 36px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em;">Coach</h1>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: flex-start;">
+      <div style="width: 28px; height: 28px; border-radius: 14px; background: rgba(124, 108, 242, 0.14); color: #5B4BD6; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9L12 3z"></path></svg>
+      </div>
+      <div style="font-size: 15px; line-height: 22px; font-weight: 500; color: #1B1A19; padding-top: 3px;">Morning! Long run today · 16 mi in zone 2. How are you feeling?</div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <div style="max-width: 300px; padding: 12px 16px; border-radius: 20px 20px 6px 20px; background: #1B1A19; color: #FFFFFF; font-size: 15px; line-height: 22px; font-weight: 500;">hey i hurt my knee, can't work out today or the next three days. pls update my training plan</div>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: flex-start;">
+      <div style="width: 28px; height: 28px; border-radius: 14px; background: rgba(124, 108, 242, 0.14); color: #5B4BD6; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9L12 3z"></path></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0px; flex-grow: 1;">
+        <div style="font-size: 15px; line-height: 22px; font-weight: 500; color: #1B1A19; padding-top: 3px;">Sorry about the knee. Here's what I'd change:</div>
+
+        <div style="background: #FFFFFF; border-radius: 20px; padding: 6px 16px; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05); display: flex; flex-direction: column;">
+          <sc-for list="{{changes}}" as="c" hint-placeholder-count="6">
+            <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 0px; border-top: 1px solid {{c.border}}; font-size: 14px; line-height: 20px;">
+              <span style="width: 34px; flex-shrink: 0; font-size: 12px; font-weight: 700; color: #6F6E67;">{{c.day}}</span>
+              <span style="display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline;">
+                <span style="font-weight: 500; color: #6F6E67; text-decoration: line-through;">{{c.old}}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6F6E67" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="align-self: center;"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                <span style="font-weight: 800; color: #1B1A19;">{{c.next}}</span>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{pending}}" hint-placeholder-val="{{true}}">
+          <button onClick="{{apply}}" style="align-self: flex-start; height: 46px; padding: 0px 20px; border: 0px; border-radius: 15px; background: #1B1A19; color: #FFFFFF; font-weight: 700; font-size: 15px;">Update my plan</button>
+        </sc-if>
+        <sc-if value="{{updated}}" hint-placeholder-val="{{false}}">
+          <div style="align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(34, 179, 166, 0.14); color: #0E7C74; font-size: 13px; font-weight: 700;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+            <span>Applied</span>
+          </div>
+        </sc-if>
+
+        <div style="font-size: 13px; line-height: 18px; font-weight: 500; color: #6F6E67;">If it's swollen, locking, or you can't put weight on it, get it checked by a doctor or physio before running again.</div>
+      </div>
+    </div>
+
+    <sc-if value="{{updated}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <div style="width: 28px; height: 28px; border-radius: 14px; background: rgba(124, 108, 242, 0.14); color: #5B4BD6; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9L12 3z"></path></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0px; flex-grow: 1;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05);">
+            <div style="width: 36px; height: 36px; border-radius: 18px; background: rgba(34, 179, 166, 0.14); color: #0E7C74; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-size: 15px; font-weight: 800;">Plan updated</div>
+              <div style="font-size: 13px; font-weight: 500; color: #5E5D58;">4 rest days · back Wed with an easy 3 mi</div>
+            </div>
+          </div>
+          <div style="font-size: 15px; line-height: 22px; font-weight: 500; color: #1B1A19;">I'll check in Tuesday night to see how the knee feels before we restart.</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <div style="max-width: 300px; padding: 12px 16px; border-radius: 20px 20px 6px 20px; background: #1B1A19; color: #FFFFFF; font-size: 15px; line-height: 22px; font-weight: 500;">ok what should i eat today then</div>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <div style="width: 28px; height: 28px; border-radius: 14px; background: rgba(124, 108, 242, 0.14); color: #5B4BD6; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9L12 3z"></path></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0px; flex-grow: 1;">
+          <div style="font-size: 15px; line-height: 22px; font-weight: 500; color: #1B1A19; padding-top: 3px;">Today is a rest day now, so less fuel, same protein:</div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05);">
+              <div style="font-size: 12px; font-weight: 700; color: #6F6E67;">Calories</div>
+              <div style="display: flex; align-items: baseline; gap: 3px;"><span style="font-size: 24px; line-height: 26px; font-weight: 800; letter-spacing: -0.02em; color: #1F3FC9;">2,300</span><span style="font-size: 12px; font-weight: 700; color: #6F6E67;">kcal</span></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(27, 26, 25, 0.04), 0 10px 30px rgba(27, 26, 25, 0.05);">
+              <div style="font-size: 12px; font-weight: 700; color: #6F6E67;">Protein</div>
+              <div style="display: flex; align-items: baseline; gap: 3px;"><span style="font-size: 24px; line-height: 26px; font-weight: 800; letter-spacing: -0.02em; color: #0E7C74;">130</span><span style="font-size: 12px; font-weight: 700; color: #6F6E67;">g</span></div>
+            </div>
+          </div>
+          <div style="font-size: 15px; line-height: 22px; font-weight: 500; color: #1B1A19;">Spread protein across four meals and get calcium and vitamin D in. Carbs drop to about 250 g since you're not running.</div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 98px; display: flex; align-items: center; gap: 8px;">
+    <label for="coach-input" style="flex-grow: 1; display: flex; align-items: center; gap: 8px; height: 52px; padding: 0px 8px 0px 18px; border-radius: 26px; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.08); color: #6F6E67;">
+      <input id="coach-input" type="text" placeholder="Tell your coach anything" style="flex-grow: 1; min-width: 0px; border: 0px; background: transparent; font-size: 15px; font-weight: 600; color: #1B1A19; outline: none;">
+      <button aria-label="Dictate" style="width: 36px; height: 36px; border: 0px; border-radius: 18px; background: transparent; color: #6F6E67; display: flex; align-items: center; justify-content: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+      </button>
+    </label>
+    <button aria-label="Send" style="width: 52px; height: 52px; border: 0px; border-radius: 26px; background: #1B1A19; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 10px 30px rgba(27, 26, 25, 0.16);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+    </button>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; align-items: center; gap: 10px;">
+    <nav aria-label="Main" style="flex-grow: 1; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); display: flex; align-items: center; padding: 6px; gap: 2px;">
+      <a href="TodayFuel.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"></path></svg>
+        <span>Today</span>
+      </a>
+      <a href="Week.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+        <span>Plan</span>
+      </a>
+      <a href="Log.dc.html" style="flex-grow: 1; height: 52px; border-radius: 26px; color: #6F6E67; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3zm0 0v7"></path></svg>
+        <span>Log</span>
+      </a>
+      <a href="Coach.dc.html" aria-current="page" style="flex-grow: 1; height: 52px; border-radius: 26px; background: rgba(34, 179, 166, 0.14); color: #0E7C74; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span>Coach</span>
+      </a>
+    </nav>
+    <a href="Log.dc.html" aria-label="Log a meal" style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 1px 2px rgba(27, 26, 25, 0.06), 0 10px 30px rgba(27, 26, 25, 0.1); color: #1B1A19; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startUpdated":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { updated: !!props.startUpdated };
+  }
+  renderVals() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const changes = [
+      { day: 'Sat', old: 'Long run 16 mi', next: 'Rest' },
+      { day: 'Sun', old: 'Recovery 4 mi', next: 'Rest' },
+      { day: 'Tue', old: 'Intervals', next: 'Rest' },
+      { day: 'Wed', old: 'Easy 5 mi', next: 'Easy 3 mi, if pain-free' },
+      { day: 'Sat', old: 'Long run 18 mi', next: '14 mi' },
+      { day: 'Fuel', old: '3,400 kcal today', next: '2,300 · protein stays 130 g' }
+    ].map((c, i) => ({ ...c, border: i === 0 ? 'transparent' : '#F0EFEA' }));
+    const updated = this.state.updated;
+    return {
+      dateLabel,
+      changes,
+      pending: !updated,
+      updated,
+      apply: () => this.setState({ updated: true })
+    };
+  }
+}
+</script>
+</body>
+</html>
