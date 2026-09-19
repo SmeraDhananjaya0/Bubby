@@ -8,7 +8,8 @@
       "node": "22.14.0",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://vekgulejexranhdhecdp.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_fOPjo3c3G2zk6dsa-KKFjQ_fCYPmC25"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_fOPjo3c3G2zk6dsa-KKFjQ_fCYPmC25",
+        "EXPO_PUBLIC_STRAVA_CLIENT_ID": "256545"
       }
     },
     "simulator": {
