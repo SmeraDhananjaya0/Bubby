@@ -18,7 +18,8 @@
     "submit:ios": "eas submit -p ios --latest",
     "build:web": "expo export --platform web",
     "db:push": "supabase db push",
-    "functions:deploy": "supabase functions deploy strava-auth strava-sync coach"
+    "functions:deploy": "supabase functions deploy strava-auth strava-sync coach",
+    "smoke:web": "zsh scripts/smoke/run.sh"
   },
   "dependencies": {
     "@expo-google-fonts/instrument-serif": "^0.4.1",

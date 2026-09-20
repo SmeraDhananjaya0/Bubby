@@ -15,6 +15,8 @@ type Props = {
   /** Fill available width in a row. */
   grow?: boolean;
   accessibilityLabel?: string;
+  /** Greyed out and inert — used while a form has an invalid field. */
+  disabled?: boolean;
 };
 
 /**
@@ -23,7 +25,7 @@ type Props = {
  * ghost: text only
  * cta / ctaSecondary: 54px full-width, pinned at the bottom of onboarding screens
  */
-export function Button({ label, onPress, variant = 'primary', icon, iconRight, style, grow, accessibilityLabel }: Props) {
+export function Button({ label, onPress, variant = 'primary', icon, iconRight, style, grow, accessibilityLabel, disabled }: Props) {
   const isCta = variant === 'cta' || variant === 'ctaSecondary';
   const bg =
     variant === 'primary' || variant === 'cta'
@@ -36,9 +38,11 @@ export function Button({ label, onPress, variant = 'primary', icon, iconRight, s
   const fg = variant === 'primary' || variant === 'cta' ? colors.white : variant === 'ghost' ? colors.accent.text : colors.ink;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         styles.base,
         isCta ? styles.cta : styles.regular,
@@ -47,6 +51,7 @@ export function Button({ label, onPress, variant = 'primary', icon, iconRight, s
         variant === 'ctaSecondary' && { boxShadow: '0 1px 2px rgba(27, 26, 25, 0.06), 0 6px 20px rgba(27, 26, 25, 0.05)' },
         grow && { flexGrow: 1 },
         pressed && { opacity: 0.85 },
+        disabled && { opacity: 0.4 },
         style,
       ]}
     >

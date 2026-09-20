@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Screen, SegmentedControl, StepIndicator, Txt } from '@/components';
+import { AlertCircle } from 'lucide-react-native';
+import { BackButton, Button, Card, Screen, SegmentedControl, StepIndicator, Txt } from '@/components';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, fonts } from '@/theme/tokens';
+import { validateProfile } from '@/lib/validate';
+import { colors, fonts, hues } from '@/theme/tokens';
+
+function FieldError({ text }: { text: string | null }) {
+  if (!text) return null;
+  return (
+    <View style={styles.error} accessibilityLiveRegion="polite">
+      <AlertCircle size={13} color={hues.amber.text} strokeWidth={2.4} />
+      <Txt style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, color: hues.amber.text }}>{text}</Txt>
+    </View>
+  );
+}
 
 /** A right-aligned numeric field with a fixed unit suffix. Keeps its own text
  *  state so typing (and clearing) feels natural, committing numbers upward. */
@@ -44,16 +56,21 @@ export default function AboutYou() {
     if (total > 0) setProfile({ heightIn: total });
   };
 
+  const errors = { age: validateProfile.age(profile.age), heightIn: validateProfile.heightIn(profile.heightIn), weightLb: validateProfile.weightLb(profile.weightLb) };
+  const valid = !errors.age && !errors.heightIn && !errors.weightLb;
+  const next = () => (onboarded ? (router.canGoBack() ? router.back() : router.replace('/(tabs)/today')) : router.push('/(onboarding)/goal'));
+
   return (
-    <Screen ambient="onboarding" bottomPad={130} footer={<Button variant="cta" label={onboarded ? 'Done' : 'Continue'} onPress={() => (onboarded ? router.back() : router.push('/(onboarding)/goal'))} />}>
-      <StepIndicator step={2} />
+    <Screen ambient="onboarding" bottomPad={130} footer={<Button variant="cta" label={onboarded ? 'Done' : 'Continue'} disabled={!valid} onPress={next} />}>
+      {onboarded ? <BackButton fallback="/(tabs)/today" /> : <StepIndicator step={2} />}
       <View style={{ gap: 4, marginBottom: 6 }}>
-        <Txt v="eyebrow">Step 2 of 4</Txt>
+        <Txt v="eyebrow">{onboarded ? 'Profile' : 'Step 2 of 4'}</Txt>
         <Txt v="title">About you</Txt>
       </View>
 
       <Card gap={0} style={{ paddingTop: 6, paddingBottom: 6 }}>
         <NumberField label="Age" value={profile.age} onCommit={(age) => setProfile({ age })} width={60} />
+        <FieldError text={errors.age} />
         <View style={styles.row}>
           <Txt style={styles.label}>Sex</Txt>
           <SegmentedControl
@@ -90,7 +107,9 @@ export default function AboutYou() {
             <Txt style={styles.unit}>in</Txt>
           </View>
         </View>
+        <FieldError text={errors.heightIn} />
         <NumberField label="Weight" value={profile.weightLb} unit="lb" onCommit={(weightLb) => setProfile({ weightLb })} />
+        <FieldError text={errors.weightLb} />
         <View style={[styles.row, { flexDirection: 'column', alignItems: 'stretch', gap: 8, borderBottomWidth: 0 }]}>
           <Txt style={styles.label}>Diet or allergies</Txt>
           <TextInput
@@ -105,7 +124,7 @@ export default function AboutYou() {
       </Card>
 
       <Txt v="bodyMuted" style={{ paddingHorizontal: 4 }}>
-        Used only to set your calorie and protein baseline. You can change any of this later in Settings.
+        Sets your daily calorie baseline and protein target; each run's cost is added on top of it. You can change any of this later in Settings.
       </Txt>
     </Screen>
   );
@@ -122,6 +141,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.hairline,
   },
   label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink2 },
+  error: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 10, marginTop: -6 },
   input: { textAlign: 'right', fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink, padding: 0 },
   unit: { fontFamily: fonts.bold, fontSize: 14, color: colors.caption },
   textField: { height: 44, paddingHorizontal: 14, borderRadius: 13, backgroundColor: colors.field, fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },

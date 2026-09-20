@@ -8,7 +8,7 @@
 import { callFunction, supabase } from '@/lib/supabase';
 import { targetsFor } from '@/lib/fuel';
 import type { Tables, TablesInsert } from '@/lib/database.types';
-import type { DayPlan, Macros, Meal, PlanChange, Profile, Race, RunHistory, WorkoutType } from '@/types';
+import type { DayPlan, Macros, Meal, PlanChange, PlanSeed, Profile, Race, RunHistory, WorkoutType } from '@/types';
 import { buildPlan, type PlanBlock } from '@/lib/plan';
 
 const TZ = 'America/New_York';
@@ -70,7 +70,13 @@ export async function loadRace(userId: string): Promise<Race | null> {
     currentWeek: block?.week ?? 1,
     phase: block?.phase ? block.phase[0] + block.phase.slice(1).toLowerCase() : 'Base',
     ...(Array.isArray(block?.periodization) && block.periodization.length
-      ? { block: { miles: (block.periodization as { miles: number }[]).map((p) => Number(p.miles)), phases: (block.periodization as { phase: Race['block'] extends infer B ? (B extends { phases: (infer P)[] } ? P : never) : never }[]).map((p) => p.phase) } }
+      ? {
+          block: {
+            miles: (block.periodization as { miles: number }[]).map((p) => Number(p.miles)),
+            phases: (block.periodization as { phase: NonNullable<Race['block']>['phases'][number] }[]).map((p) => p.phase),
+            seed: ((block.payload ?? {}) as { seed?: PlanSeed }).seed,
+          },
+        }
       : {}),
   };
 }
@@ -90,13 +96,22 @@ export async function saveRace(userId: string, race: Race) {
   await supabase.from('goals').delete().eq('user_id', userId).neq('id', `${userId}-goal`);
 }
 
+/** "I'm not training for a race": drop the goal, the block and every future session. */
+export async function clearRace(userId: string) {
+  await Promise.all([
+    supabase.from('goals').delete().eq('user_id', userId),
+    supabase.from('blocks').delete().eq('user_id', userId),
+    supabase.from('planned_sessions').delete().eq('user_id', userId).gte('date', todayISO()),
+  ]);
+}
+
 /**
  * Build and store a training block for the user's goal. Replaces any existing plan
  * (sessions from today onward) so re-running onboarding or changing the race is safe.
  * Returns the block so callers can show it immediately.
  */
-export async function savePlan(userId: string, race: Race, profile: Profile, opts: { currentWeeklyMiles?: number } = {}): Promise<PlanBlock> {
-  const plan = buildPlan({ userId, race, profile, currentWeeklyMiles: opts.currentWeeklyMiles });
+export async function savePlan(userId: string, race: Race, profile: Profile, history: RunHistory | null = null): Promise<PlanBlock> {
+  const plan = buildPlan({ userId, race, profile, history });
   const today = todayISO();
   // Keep history: only sessions from today forward are replaced.
   await supabase.from('planned_sessions').delete().eq('user_id', userId).gte('date', today);
@@ -115,7 +130,7 @@ export async function savePlan(userId: string, race: Race, profile: Profile, opt
     week: plan.week,
     total_weeks: plan.total_weeks,
     periodization: plan.periodization,
-    payload: { goalId: `${userId}-goal`, engine: 'plan-v0' },
+    payload: { goalId: `${userId}-goal`, engine: 'plan-v1', seed: plan.seed },
   });
   await supabase.from('blocks').delete().eq('user_id', userId).neq('id', `${userId}-block`);
   return plan;
@@ -158,14 +173,15 @@ export async function loadWeek(userId: string, day = todayISO()): Promise<{ week
     const onDay = (acts ?? []).filter((a) => todayISO(new Date(a.started_at)) === date).sort((a, b) => (b.distance_m ?? 0) - (a.distance_m ?? 0));
     const act = (s && onDay.find((a) => a.matched_session_id === s.id)) ?? onDay[0];
     if (!s) {
-      if (act?.distance_m) return { dow: DOW[dt.getDay()], date: dt.getDate(), type: 'easy', title: `Run ${(act.distance_m / 1609.344).toFixed(1)} mi`, miles: 0, note: 'Not on the plan — synced from Strava.', done: summary(act) };
-      return { dow: DOW[dt.getDay()], date: dt.getDate(), type: 'rest', title: 'Rest', miles: 0, note: 'Nothing planned. Rest or easy movement.' };
+      if (act?.distance_m) return { dow: DOW[dt.getDay()], date: dt.getDate(), iso: date, type: 'easy', title: `Run ${(act.distance_m / 1609.344).toFixed(1)} mi`, miles: 0, note: 'Not on the plan — synced from Strava.', done: summary(act) };
+      return { dow: DOW[dt.getDay()], date: dt.getDate(), iso: date, type: 'rest', title: 'Rest', miles: 0, note: 'Nothing planned. Rest or easy movement.' };
     }
     const p = (s.payload ?? {}) as { distanceMi?: number; paceTarget?: string; zone?: string; time?: string; fuel?: string };
     const done = act?.distance_m ? summary(act) : s.status === 'done' ? 'Completed' : undefined;
     return {
       dow: DOW[dt.getDay()],
       date: dt.getDate(),
+      iso: date,
       type: normType(s.type),
       title: s.title,
       miles: Number(p.distanceMi ?? 0),
@@ -178,6 +194,32 @@ export async function loadWeek(userId: string, day = todayISO()): Promise<{ week
     };
   });
   return { week, todayIndex: Math.max(0, dates.indexOf(day)) };
+}
+
+/** Every planned day from this week's Monday to the end of the block — the Plan tab's calendar. */
+export async function loadPlan(userId: string, day = todayISO()): Promise<DayPlan[]> {
+  const d = new Date(day + 'T00:00:00');
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const { data } = await supabase.from('planned_sessions').select('*').eq('user_id', userId).gte('date', monday.toLocaleDateString('en-CA')).order('date');
+  return (data ?? []).map((s) => {
+    const p = (s.payload ?? {}) as { distanceMi?: number; paceTarget?: string; zone?: string; time?: string; fuel?: string };
+    const dt = new Date(s.date + 'T00:00:00');
+    return {
+      dow: DOW[dt.getDay()],
+      date: dt.getDate(),
+      iso: s.date,
+      type: normType(s.type),
+      title: s.title,
+      miles: Number(p.distanceMi ?? 0),
+      pace: p.paceTarget,
+      effort: p.zone,
+      note: s.detail ?? '',
+      fuel: p.fuel,
+      time: p.time,
+      done: s.status === 'done' ? 'Completed' : undefined,
+    };
+  });
 }
 
 /** What Strava has shown us: weekly mileage for the last `weeks` weeks (oldest first) and a few headline numbers. */

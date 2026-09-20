@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { ChevronRight, Flame } from 'lucide-react-native';
 import { Card, CardFooter, CardHeader, Chip, Rings, Txt } from '@/components';
 import { selectToday, useAppStore } from '@/store/useAppStore';
-import { sum, targetsFor } from '@/lib/fuel';
+import { fuelBreakdown, sum, targetsFor } from '@/lib/fuel';
 import { n } from '@/lib/format';
 import { fonts, hues, macroHue } from '@/theme/tokens';
 import { runFuels } from '@/data/sample';
@@ -32,6 +32,7 @@ export function FuelTodayCard() {
   const runFuel = useAppStore((s) => s.runFuel);
 
   const targets = targetsFor(today, profile);
+  const split = fuelBreakdown(today, profile);
   const fuelMacros = runFuels
     .filter((f) => runFuel[f.label])
     .map((f) => ({ kcal: f.kcal * runFuel[f.label], carbs: f.carbs * runFuel[f.label], protein: 0, fat: 0 }));
@@ -57,6 +58,9 @@ export function FuelTodayCard() {
           ]}
         />
       </View>
+      <Txt v="caption" style={{ fontFamily: fonts.semibold }}>
+        {split.run > 0 ? `${n(split.base)} kcal baseline + ${n(split.run)} for ${today.miles} mi` : `${n(split.base)} kcal baseline · no run today`}
+      </Txt>
       <CardFooter style={styles.footer}>
         <Txt v="small">
           {n(Math.max(0, targets.kcal - eaten.kcal))} kcal left · {Math.max(0, targets.carbs - eaten.carbs)} g carbs to go

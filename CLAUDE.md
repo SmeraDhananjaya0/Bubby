@@ -23,6 +23,7 @@ npm install
 npx expo start          # then i / a / w   (no .env → local mode with sample data)
 npm run typecheck       # tsc --noEmit — must pass before every commit
 npm run build:web       # static export to dist/ (what Vercel runs)
+npm run smoke:web       # build + drive onboarding in headless Chrome (scripts/smoke/); needs Google Chrome installed
 npm run build:ios:sim   # EAS dev-client build for the simulator
 ```
 
@@ -51,6 +52,7 @@ src/
   theme/tokens.ts             # colors, hues, radii, spacing, shadows, type scale, ambient presets  ← the design system
   components/                 # Screen, Header, Card, Button, Chip, Stat, Bar, Rings, WeekBars, BlockChart, TrendChart, …
   features/today/             # the cards that compose the home screen
+  features/plan/              # CalendarCard: every day of the block on a month grid
   store/useAppStore.ts        # app state + selectors (persist, per-account snapshots, cloud write-through)
   store/useAuthStore.ts       # who is signed in (User); cloud accounts carry `cloudId`
   data/repo.ts                # the ONLY Supabase access layer: DB rows ↔ app types, rpc, edge-function calls, savePlan()
@@ -60,7 +62,8 @@ src/
   lib/useAuth.ts              # Supabase session ↔ useAuthStore/useAppStore; sendCode / verifyCode / signInWithGoogle
   lib/google.ts               # expo-auth-session Google (local mode only; cloud uses Supabase OAuth)
   lib/coach.ts                # local rule-based coach — the fallback when the coach function isn't reachable
-  lib/plan.ts                 # plan builder v0: goal + profile → periodized block of daily sessions (pure)
+  lib/plan.ts                 # plan builder v1: goal + profile + run history → periodized block of daily sessions (pure)
+  lib/validate.ts             # race date / goal time / name / profile validation + input formatting (onboarding blocks on these)
   lib/strava.ts               # Strava OAuth: auth-session on native, full-page redirect → app/strava.tsx on web
   lib/storage.ts              # AsyncStorage adapter for zustand persist
   lib/health.ts               # Apple Health adapter (iOS; native module loaded lazily)
@@ -100,13 +103,25 @@ design/
 7. **Real controls.** `Pressable`/`TextInput` with `accessibilityRole` and labels on icon-only buttons.
    Touch targets ≥ 44px.
 8. **Numbers come from the engine.** Anything shown as a *target* (kcal, carbs, protein, fat, protocol)
-   must come from `lib/fuel.ts`. Sample *logged* data lives in `data/sample.ts` until real logging exists.
+   must come from `lib/fuel.ts`. A day's calories are always `baselineKcal(profile)` (Mifflin-St Jeor × 1.35)
+   plus `runKcal(profile, type, miles)` (~0.63 kcal per lb per mile, more for hard sessions) — `fuelBreakdown()`
+   gives both halves for "why" copy. Sample *logged* data lives in `data/sample.ts` until real logging exists.
 
 ## State & data flow
 
-- `useAppStore` holds, per account (`hydrateForUser` swaps snapshots): race, profile, the current week (`DayPlan[]`),
-  today's index, meals, custom foods, run-fuel counts, supplements taken, water, the Plan-tab suggestion state and
-  the coach thread (`chat: ChatMessage[]` with `CoachProposal`s). Transient: `userId`, `cloudReady`, `coachBusy`.
+- `useAppStore` holds, per account (`hydrateForUser` swaps snapshots): race, profile, run history, the whole block
+  (`plan: DayPlan[]`, one entry per day with `iso`), the current week (`DayPlan[]`, cut from the plan or loaded from
+  the cloud with synced runs), today's index, meals, custom foods, run-fuel counts, supplements taken, water, the
+  Plan-tab suggestion state and the coach thread (`chat: ChatMessage[]` with `CoachProposal`s).
+  Transient: `userId`, `cloudReady`, `coachBusy`.
+- `rebuildPlan()` is the one way a plan comes into being: it runs `buildPlan()` on race + profile + history, sets
+  `plan`/`week`/`race.block` (with the `seed` that says what it was built from) and, in cloud mode, saves the goal and
+  sessions. Onboarding's "Start training", the goal screen's "Save & rebuild plan" and the once-only re-seed in
+  `hydrateFromCloud()` (a default-seeded plan becomes history-seeded when Strava has ≥ 3 runs) all go through it.
+  `syncToday()` (mounted in the tabs layout) re-cuts the week when the date rolls over.
+- The goal screen is both onboarding step 3 and the edit screen (Settings, Today's "Edit", the Plan tab): it
+  validates name / date / goal time with `lib/validate.ts` and disables the CTA until they pass, so an invalid date
+  never reaches `buildPlan()` or `daysUntil()`.
 - Coach proposals are one contract for both coaches: `changes` (what the UI strikes through) + either `apply`
   (local patches) or `cloudIds` (rows in `proposals`, applied by `decide_proposal`). Nothing mutates until approved.
 - `targetsFor(day, profile)` → `{kcal, carbs, protein, fat}`. `protocolFor(day)` → before/during/after + carry list.
@@ -153,8 +168,9 @@ web export + Vercel config · custom foods + search on Log · Settings.
 
 1. **Ship it** — `eas init` + first simulator build; import the repo on Vercel; set edge-function secrets;
    enable email OTP (+ Google provider). Then dogfood a full week in cloud mode and fix what hurts.
-2. **Plan v1** — `lib/plan.ts` is deterministic and explainable but blind to history: seed `currentWeeklyMiles`
-   from Strava/Health once connected, and let the coach function re-plan whole weeks (not just single sessions).
+2. **Plan v1** — done: `lib/plan.ts` seeds volume, first long run and easy pace from Strava history, ramps ≤ 10%/wk,
+   progresses the long run, rotates quality sessions and caps volume by run days. Next: let the coach function
+   re-plan whole weeks (not just single sessions), and re-seed when history changes materially, not just once.
 3. **Apple Health** — install the HealthKit module, implement `readRecentRuns()` in `lib/health.ts`, and feed it
    through the same match/deviation path as Strava (share the code in `strava-sync`, rename to `activity-sync`).
 4. **Scheduled sync + pushes** — nightly `strava-sync` per user (pg_cron/net or Supabase cron), morning recap
@@ -163,7 +179,8 @@ web export + Vercel config · custom foods + search on Log · Settings.
    box in `design/product-flow.pdf`); keep targets explainable (the coach should be able to say *why*).
    Every proposal + outcome is already logged in `proposals` — that's the eval set.
 6. **Food search / photo logging** — the search field and camera button on Log are wired to nothing yet.
-7. **Tests** — Playwright smoke on the web export (the flow in `design/screens/` is the script), Vitest on `lib/fuel.ts`.
+7. **Tests** — `npm run smoke:web` drives onboarding → Today → Plan → edit on the export over raw CDP (no Playwright);
+   extend it to Log / Coach. Add Vitest on `lib/fuel.ts` and `lib/plan.ts` (the scenarios are easy to table-drive).
 
 ## Things to keep in mind
 

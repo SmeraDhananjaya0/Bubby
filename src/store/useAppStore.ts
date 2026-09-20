@@ -18,7 +18,9 @@ import { persist } from 'zustand/middleware';
 import { zustandStorage } from '@/lib/storage';
 import type { ChatMessage, CoachProposal, DayPlan, FoodOption, Meal, Profile, Race, RunHistory } from '@/types';
 import { sampleMeals, sampleProfile, sampleRace, sampleTodayIndex, sampleWeek } from '@/data/sample';
-import { nowTime } from '@/lib/format';
+import { isoAdd, localISO, mondayOf, nowTime } from '@/lib/format';
+import { DIST_MI, blockWeekOf, buildPlan, canSeed, capitalize, toDayPlan, weekFromPlan } from '@/lib/plan';
+import { validateRaceDate } from '@/lib/validate';
 import { coachReply } from '@/lib/coach';
 import { isCloudConfigured } from '@/lib/supabase';
 import * as repo from '@/data/repo';
@@ -31,6 +33,9 @@ type UserData = {
   hasRace: boolean;
   race: Race;
   profile: Profile;
+  /** Every day of the training block, oldest first — the Plan tab's calendar. Empty until a plan is built. */
+  plan: DayPlan[];
+  /** The Monday-first week containing today, cut from `plan` (or loaded from the cloud with synced runs). */
   week: DayPlan[];
   todayIndex: number;
   todayDone: boolean;
@@ -67,6 +72,15 @@ type Actions = {
   setHasRace: (v: boolean) => void;
   setRace: (patch: Partial<Race>) => void;
   setProfile: (patch: Partial<Profile>) => void;
+  /** Run history from Strava / Apple Health, used to seed the plan. */
+  setHistory: (h: RunHistory | null) => void;
+  /**
+   * Build the block from the current race + profile + history and replace the plan (and, in cloud
+   * mode, the saved sessions). Called at the end of onboarding and whenever the race or run days change.
+   */
+  rebuildPlan: () => void;
+  /** Re-cut this week from the plan when the date has rolled over (call on app open / foreground). */
+  syncToday: () => void;
 
   markTodayDone: (done: boolean) => void;
 
@@ -99,13 +113,17 @@ const greeting = (): ChatMessage => ({
   text: "Hey — I'm your coach. Tell me how a run felt, if something's changed (injury, travel, sickness), or ask what to eat today, and I'll adjust your plan.",
 });
 
-/** A fresh account: the demo plan, but not yet onboarded. */
+/** A race the goal screen can start from: no name yet, a Sunday about 16 weeks out. */
+const blankRace = (): Race => ({ ...sampleRace, name: '', date: isoAdd(mondayOf(localISO()), 16 * 7 + 6), block: undefined });
+
+/** A fresh account: nothing planned yet; the sample week stands in until onboarding builds a real plan. */
 function freshUserData(): UserData {
   return {
     onboarded: false,
     hasRace: true,
-    race: sampleRace,
+    race: blankRace(),
     profile: sampleProfile,
+    plan: [],
     week: sampleWeek,
     todayIndex: sampleTodayIndex,
     todayDone: false,
@@ -127,6 +145,7 @@ function snapshotOf(s: State): UserData {
     hasRace: s.hasRace,
     race: s.race,
     profile: s.profile,
+    plan: s.plan,
     week: s.week,
     todayIndex: s.todayIndex,
     todayDone: s.todayDone,
@@ -190,35 +209,71 @@ export const useAppStore = create<State & Actions>()(
 
       completeOnboarding: () => {
         set({ onboarded: true });
+        get().rebuildPlan();
         const s = get();
+        if (cloud(s)) swallow(repo.saveProfile(s.userId!, s.profile, { onboarded: true }));
+      },
+      setHasRace: (hasRace) => set({ hasRace }),
+      // Edits are committed by the goal screen's Save, which calls rebuildPlan() — not on every keystroke.
+      setRace: (patch) => set((s) => ({ race: { ...s.race, ...patch, ...(patch.distance ? { miles: DIST_MI[patch.distance] } : {}) } })),
+      setHistory: (history) => set({ history }),
+
+      rebuildPlan: () => {
+        const s = get();
+        if (!s.hasRace) {
+          set({ plan: [], week: sampleWeek, todayIndex: sampleTodayIndex, todayDone: false, race: { ...s.race, block: undefined } });
+          if (cloud(s)) swallow(repo.clearRace(s.userId!));
+          return;
+        }
+        if (validateRaceDate(s.race.date)) return; // never build from a bad date — the goal screen blocks this
+        const built = buildPlan({ userId: s.userId ?? s.activeUid ?? 'local', race: s.race, profile: s.profile, history: s.history });
+        const plan = built.sessions.map(toDayPlan);
+        const { week, todayIndex } = weekFromPlan(plan);
+        const race: Race = {
+          ...s.race,
+          miles: DIST_MI[s.race.distance],
+          totalWeeks: built.total_weeks,
+          currentWeek: built.week,
+          phase: capitalize(built.phase),
+          block: { miles: built.periodization.map((p) => p.miles), phases: built.periodization.map((p) => p.phase), seed: built.seed },
+        };
+        set({ plan, week, todayIndex, todayDone: false, race, coachApplied: false });
         if (!cloud(s)) return;
         const uid = s.userId!;
         swallow(
           (async () => {
-            await repo.saveProfile(uid, s.profile, { onboarded: true });
-            if (s.hasRace) {
-              await repo.saveRace(uid, s.race);
-              await repo.savePlan(uid, s.race, s.profile, { currentWeeklyMiles: s.history?.weeklyAvg || undefined });
-              const [wk, race] = await Promise.all([repo.loadWeek(uid), repo.loadRace(uid)]);
-              set({ week: wk.week, todayIndex: wk.todayIndex, ...(race ? { race } : {}) });
-            }
+            await repo.saveRace(uid, race);
+            await repo.savePlan(uid, race, s.profile, s.history);
+            const [wk, cloudPlan] = await Promise.all([repo.loadWeek(uid), repo.loadPlan(uid)]);
+            set({ week: wk.week, todayIndex: wk.todayIndex, plan: cloudPlan.length ? cloudPlan : plan });
           })(),
         );
       },
-      setHasRace: (hasRace) => set({ hasRace }),
-      setRace: (patch) => {
-        set((s) => ({ race: { ...s.race, ...patch } }));
+
+      syncToday: () => {
         const s = get();
-        if (cloud(s) && s.onboarded) {
-          swallow(
-            (async () => {
-              await repo.saveRace(s.userId!, s.race);
-              await repo.savePlan(s.userId!, s.race, s.profile, { currentWeeklyMiles: s.history?.weeklyAvg || undefined });
-              const wk = await repo.loadWeek(s.userId!);
-              set({ week: wk.week, todayIndex: wk.todayIndex });
-            })(),
-          );
+        if (!s.onboarded || !s.hasRace) return;
+        const today = localISO();
+        if (cloud(s)) {
+          // The cloud week arrives at sign-in and after every sync; refetch only if the calendar rolled past it.
+          if (s.cloudReady && s.week[0]?.iso && s.week[0].iso !== mondayOf(today)) void s.hydrateFromCloud();
+          return;
         }
+        if (!s.plan.length) {
+          // Onboarded before plans were stored locally: build one now.
+          if (!validateRaceDate(s.race.date)) s.rebuildPlan();
+          return;
+        }
+        const { week, todayIndex } = weekFromPlan(s.plan, today);
+        const currentWeek = blockWeekOf(s.plan[0].iso!, s.race.totalWeeks, today);
+        const phase = capitalize(s.race.block?.phases[currentWeek - 1] ?? s.race.phase.toLowerCase());
+        const weekMoved = s.week[0]?.iso !== week[0].iso;
+        if (!weekMoved && s.todayIndex === todayIndex && currentWeek === s.race.currentWeek) return;
+        set({
+          ...(weekMoved ? { week, todayDone: false } : {}),
+          todayIndex,
+          race: { ...s.race, currentWeek, phase },
+        });
       },
       setProfile: (patch) => {
         set((s) => ({ profile: { ...s.profile, ...patch } }));
@@ -316,14 +371,14 @@ export const useAppStore = create<State & Actions>()(
           );
           return;
         }
-        set((st) => ({
-          week: st.week.map((d) => {
+        set((st) => {
+          const week = st.week.map((d) => {
             const change = proposal.apply.find((a) => a.dow === d.dow);
             return change ? { ...d, ...change.patch } : d;
-          }),
-          coachApplied: true,
-          chat: markApplied(st.chat),
-        }));
+          });
+          const byIso = new Map(week.filter((d) => d.iso).map((d) => [d.iso!, d]));
+          return { week, plan: st.plan.map((d) => (d.iso && byIso.has(d.iso) ? byIso.get(d.iso)! : d)), coachApplied: true, chat: markApplied(st.chat) };
+        });
       },
 
       dismissProposal: (messageId) => {
@@ -340,7 +395,8 @@ export const useAppStore = create<State & Actions>()(
           if (uid === s.activeUid) return s;
           const snapshots = { ...s.snapshots };
           if (s.activeUid) snapshots[s.activeUid] = snapshotOf(s);
-          const next = snapshots[uid] ?? freshUserData();
+          // Older snapshots may predate newer fields (e.g. `plan`), so fill from a fresh account first.
+          const next = { ...freshUserData(), ...(snapshots[uid] ?? {}) };
           if (snapshots[uid]) delete snapshots[uid];
           return { ...next, activeUid: uid, snapshots, cloudReady: false };
         }),
@@ -357,18 +413,31 @@ export const useAppStore = create<State & Actions>()(
         if (!cloud(s)) return;
         const uid = s.userId!;
         try {
-          const [prof, race, wk, nut, history] = await Promise.all([repo.loadProfile(uid), repo.loadRace(uid), repo.loadWeek(uid), repo.loadNutrition(uid), repo.loadHistory(uid).catch(() => null)]);
+          const [prof, race, wk, nut, history, cloudPlan] = await Promise.all([
+            repo.loadProfile(uid),
+            repo.loadRace(uid),
+            repo.loadWeek(uid),
+            repo.loadNutrition(uid),
+            repo.loadHistory(uid).catch(() => null),
+            repo.loadPlan(uid).catch(() => [] as DayPlan[]),
+          ]);
           const onboarded = !!prof?.onboarded;
-          const hasPlan = wk.week.some((d) => d.type !== 'rest');
+          const hasPlan = cloudPlan.length > 0 || wk.week.some((d) => d.type !== 'rest');
           set({
             cloudReady: true,
             history,
             ...(prof ? { profile: prof.profile, onboarded: onboarded || s.onboarded } : {}),
             ...(race ? { race, hasRace: true } : onboarded ? { hasRace: false } : {}),
             // A brand-new cloud account keeps the sample week until onboarding builds a real plan.
-            ...(hasPlan || onboarded ? { week: wk.week, todayIndex: wk.todayIndex } : {}),
+            ...(hasPlan || onboarded ? { week: wk.week, todayIndex: wk.todayIndex, plan: cloudPlan } : {}),
             ...(onboarded ? { meals: nut.meals, supplements: nut.supplements, water: nut.water, runFuel: {} } : {}),
           });
+          // Re-seed once real history exists: a plan built from the defaults (or no plan at all) becomes
+          // one shaped by the runner's actual mileage. Plans already seeded from history are left alone.
+          const st = get();
+          const seededFromHistory = st.race.block?.seed?.source === 'history';
+          const hasHistory = canSeed(history);
+          if (onboarded && st.hasRace && !validateRaceDate(st.race.date) && (!cloudPlan.length || (hasHistory && !seededFromHistory))) st.rebuildPlan();
         } catch (e) {
           console.warn('[bubbie] hydrate failed', e);
         }
@@ -394,4 +463,14 @@ export const useAppStore = create<State & Actions>()(
 
 /** Selectors */
 export const selectToday = (s: State) => s.week[s.todayIndex];
-export const selectTomorrow = (s: State) => s.week[(s.todayIndex + 1) % s.week.length];
+/** Tomorrow from the plan when we have one (so Sunday looks at next Monday, not this one); else the next slot in the week. */
+export const selectTomorrow = (s: State) => {
+  const today = s.week[s.todayIndex];
+  if (today?.iso) {
+    const next = isoAdd(today.iso, 1);
+    const fromWeek = s.week.find((d) => d.iso === next);
+    const fromPlan = fromWeek ?? s.plan.find((d) => d.iso === next);
+    if (fromPlan) return fromPlan;
+  }
+  return s.week[(s.todayIndex + 1) % s.week.length];
+};

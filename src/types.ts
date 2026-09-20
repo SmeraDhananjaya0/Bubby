@@ -5,6 +5,8 @@ export type DayPlan = {
   dow: string;
   /** Day of month, for the week strip. */
   date: number;
+  /** YYYY-MM-DD (local). Set on every day that came from the plan builder or the cloud. */
+  iso?: string;
   type: WorkoutType;
   title: string;
   /** Planned miles; 0 for rest. */
@@ -50,8 +52,20 @@ export type Race = {
   totalWeeks: number;
   currentWeek: number;
   phase: string;
-  /** The saved block's weekly miles + phase, oldest first (cloud accounts). */
-  block?: { miles: number[]; phases: Array<'base' | 'build' | 'peak' | 'taper'> };
+  /** The saved block: weekly miles + phase, oldest first, and what the builder was seeded from. */
+  block?: { miles: number[]; phases: Array<'base' | 'build' | 'peak' | 'taper'>; seed?: PlanSeed };
+};
+
+/** What the plan builder started from — shown on the plan so the runner can see it came from their history. */
+export type PlanSeed = {
+  /** `history` when at least three synced runs shaped it; `default` when it fell back to the distance defaults. */
+  source: 'history' | 'default';
+  weeklyAvg: number;
+  longestMi: number;
+  avgPaceSec: number | null;
+  runs: number;
+  /** Goal pace minus the race pace recent runs suggest, in s/mi. Positive = the goal is faster than current fitness. */
+  goalGapSec: number | null;
 };
 
 /** What the run history (Strava) says about the last 12 weeks. */

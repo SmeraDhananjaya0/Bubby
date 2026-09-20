@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Flag } from 'lucide-react-native';
 import { Button, Card, CardHeader, Chip, Txt } from '@/components';
@@ -13,7 +13,15 @@ export function RaceCard() {
   const race = useAppStore((s) => s.race);
   const days = daysUntil(race.date);
   const weeks = Array.from({ length: race.totalWeeks }, (_, i) => i + 1);
-  const peakIn = Math.max(0, 8 - race.currentWeek);
+  const phases = race.block?.phases ?? [];
+  const peakStart = phases.indexOf('peak') + 1;
+  const phaseNow = phases[race.currentWeek - 1];
+  const peakLabel =
+    race.currentWeek === race.totalWeeks ? 'Race week'
+    : phaseNow === 'taper' ? 'Tapering'
+    : phaseNow === 'peak' ? 'Peak weeks'
+    : peakStart > race.currentWeek ? `Peak in ${peakStart - race.currentWeek} wks`
+    : `${race.totalWeeks - race.currentWeek} wks to go`;
 
   return (
     <Card gap={16}>
@@ -26,20 +34,23 @@ export function RaceCard() {
           </Txt>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Txt style={styles.countdown}>{days}</Txt>
-          <Txt v="eyebrow">days</Txt>
+          <Txt style={styles.countdown}>{days ?? '—'}</Txt>
+          <Txt v="eyebrow">{days === 1 ? 'day' : 'days'}</Txt>
         </View>
       </View>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Chip label={`Goal ${race.goalTime}`} hue={hues.accent} size="md" style={{ height: 30 }} />
         <Chip label={`${paceFor(race.goalTime, race.miles)} /mi`} size="md" style={{ height: 30 }} />
+        <Pressable onPress={() => router.push('/(onboarding)/goal')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Edit race" style={{ marginLeft: 'auto', minHeight: 30, justifyContent: 'center' }}>
+          <Txt style={{ fontFamily: fonts.bold, fontSize: 13, color: hues.accent.text }}>Edit</Txt>
+        </Pressable>
       </View>
       <View style={{ gap: 8 }}>
         <View style={styles.between}>
           <Txt v="small">
             Week {race.currentWeek} of {race.totalWeeks} · {race.phase}
           </Txt>
-          <Txt v="small">{peakIn > 0 ? `Peak in ${peakIn} wks` : 'Peak week'}</Txt>
+          <Txt v="small">{peakLabel}</Txt>
         </View>
         <View style={{ flexDirection: 'row', gap: 3, height: 8 }}>
           {weeks.map((w) => (

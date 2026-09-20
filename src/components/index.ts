@@ -1,5 +1,6 @@
 export { Ambient } from './Ambient';
 export { Avatar } from './Avatar';
+export { BackButton } from './BackButton';
 export { Bar, BarRow } from './Bar';
 export { BlockChart } from './BlockChart';
 export { Button } from './Button';

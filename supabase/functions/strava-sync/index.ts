@@ -31,10 +31,11 @@ async function seal(plain: string) {
   return { ciphertext: b64(out.slice(0, -16)), tag: b64(out.slice(-16)), iv: b64(iv) };
 }
 
-// ---- fuel engine v0 (kept in step with src/lib/fuel.ts) ----
+// ---- fuel engine v0.1 (kept in step with src/lib/fuel.ts) ----
+// baseline = Mifflin-St Jeor × 1.35 (daily living, no running); run cost = weight_lb × kcal/lb/mi × miles.
 type WT = 'easy' | 'recovery' | 'intervals' | 'tempo' | 'long' | 'rest';
-const CARBS_PER_KG: Record<WT, number> = { rest: 3.4, recovery: 4.1, easy: 4.5, tempo: 5.5, intervals: 5.2, long: 6.6 };
-const KCAL_PER_MILE: Record<WT, number> = { rest: 0, recovery: 75, easy: 70, tempo: 93, intervals: 75, long: 69 };
+const CARBS_PER_KG: Record<WT, number> = { rest: 3.5, recovery: 4.5, easy: 5, tempo: 6, intervals: 6, long: 6.5 };
+const KCAL_PER_LB_MILE: Record<WT, number> = { rest: 0, recovery: 0.6, easy: 0.63, long: 0.63, tempo: 0.68, intervals: 0.72 };
 function normType(t: string): WT {
   const s = (t || '').toLowerCase();
   if (s.includes('long')) return 'long';
@@ -45,16 +46,21 @@ function normType(t: string): WT {
   return 'easy';
 }
 function targets(profile: { age?: number | null; sex?: string | null; height_in?: number | null; weight_lb?: number | null }, type: WT, miles: number) {
-  const kg = (profile.weight_lb ?? 160) * 0.4536;
+  const lb = profile.weight_lb ?? 160;
+  const kg = lb * 0.4536;
   const cm = (profile.height_in ?? 69) * 2.54;
   const bmr = 10 * kg + 6.25 * cm - 5 * (profile.age ?? 30) + (profile.sex === 'Female' ? -161 : 5);
-  const base = Math.round((bmr * 1.4) / 50) * 50;
-  const kcal = Math.round((base + miles * KCAL_PER_MILE[type]) / 50) * 50;
+  const base = Math.round((bmr * 1.35) / 10) * 10;
+  const run = Math.round((lb * KCAL_PER_LB_MILE[type] * Math.max(0, miles)) / 10) * 10;
+  const kcal = base + run;
+  const carbsPerKg = type === 'long' ? Math.min(8, CARBS_PER_KG.long + Math.max(0, miles - 10) * 0.15) : CARBS_PER_KG[type];
+  const carbs_g = Math.round((kg * carbsPerKg) / 5) * 5;
+  const protein_g = Math.round((kg * 1.8) / 5) * 5;
   return {
     kcal,
-    carbs_g: Math.round((kg * CARBS_PER_KG[type]) / 5) * 5,
-    protein_g: Math.round((kg * 1.8) / 5) * 5,
-    fat_g: Math.max(50, Math.round((kcal * 0.25) / 9)),
+    carbs_g,
+    protein_g,
+    fat_g: Math.round(Math.max(kg * 0.8, (kcal - carbs_g * 4 - protein_g * 4) / 9)),
     sodium_mg: type === 'long' ? 3500 : type === 'rest' ? 2300 : 3000,
   };
 }

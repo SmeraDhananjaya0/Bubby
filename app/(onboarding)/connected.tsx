@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { TrendingUp } from 'lucide-react-native';
-import { Button, Card, CardHeader, HistoryBars, Screen, Stat, StepIndicator, Txt } from '@/components';
+import { BackButton, Button, Card, CardHeader, HistoryBars, Screen, Stat, StepIndicator, Txt } from '@/components';
 import { loadHistory } from '@/data/repo';
 import type { RunHistory } from '@/types';
 import { sampleHistoryMiles, sampleStravaStats } from '@/data/sample';
@@ -17,15 +17,21 @@ export default function Connected() {
   const router = useRouter();
   const { via } = useLocalSearchParams<{ via?: string }>();
   const userId = useAppStore((s) => s.userId);
+  const storeHistory = useAppStore((s) => s.setHistory);
   const [history, setHistory] = useState<RunHistory | null>(userId && via !== 'health' ? null : SAMPLE);
 
   // Cloud mode: what the first sync just pulled. Local mode / Apple Health: the sample.
+  // Either way it goes into the store so the plan builder starts from it.
   useEffect(() => {
-    if (!userId || via === 'health') return;
+    if (!userId) storeHistory(SAMPLE); // local mode is all sample data, so the plan seeds from the sample too
+    if (!userId || via === 'health') return; // Apple Health has no sync yet: a cloud plan starts from the defaults
+
     let alive = true;
-    loadHistory(userId).then((h) => alive && setHistory(h)).catch(() => alive && setHistory({ ...SAMPLE, runs: 0, weeklyMiles: Array(12).fill(0), weeklyAvg: 0, longestMi: 0, maxHr: null, avgPaceSec: null }));
+    loadHistory(userId)
+      .then((h) => { if (alive) { setHistory(h); storeHistory(h); } })
+      .catch(() => alive && setHistory({ ...SAMPLE, runs: 0, weeklyMiles: Array(12).fill(0), weeklyAvg: 0, longestMi: 0, maxHr: null, avgPaceSec: null }));
     return () => { alive = false; };
-  }, [userId, via]);
+  }, [userId, via, storeHistory]);
 
   const h = history;
   const last3 = h ? Math.round(h.weeklyMiles.slice(-3).reduce((a, b) => a + b, 0) / 3) : 0;
@@ -33,6 +39,7 @@ export default function Connected() {
 
   return (
     <Screen ambient="onboarding" bottomPad={130} footer={<Button variant="cta" label="Continue" onPress={() => router.push('/(onboarding)/about-you')} />}>
+      <BackButton fallback="/(onboarding)/welcome" />
       <StepIndicator step={1} />
       <View style={{ gap: 4, marginBottom: 6 }}>
         <Txt v="eyebrow">{h ? `${h.runs} runs synced` : 'Syncing…'}</Txt>

@@ -4,9 +4,12 @@ import { useRouter } from 'expo-router';
 import { Activity, Check, ChevronRight, Flag, Moon, Sparkles, TrendingUp, Zap } from 'lucide-react-native';
 import { BlockChart, Button, Card, CardHeader, Chip, Header, HistoryBars, IconCircle, Screen, Stat, Txt } from '@/components';
 import { useAppStore } from '@/store/useAppStore';
-import { targetsFor } from '@/lib/fuel';
+import { fuelBreakdown, targetsFor } from '@/lib/fuel';
 import { n, shortDate } from '@/lib/format';
+import { seedSummary } from '@/lib/plan';
 import { sampleBlockMiles, sampleBlockPhases } from '@/data/sample';
+import { CalendarCard } from '@/features/plan/CalendarCard';
+import { NoRaceNudge } from '@/features/today/RaceCard';
 import { colors, fonts, hues, workoutHue } from '@/theme/tokens';
 import type { WorkoutType } from '@/types';
 
@@ -19,25 +22,27 @@ const ICON: Record<WorkoutType, React.ComponentType<{ size?: number; color?: str
   long: Activity,
 };
 
-/** Plan tab: this week (tap a day), the adaptive suggestion, the whole block. */
+/** Plan tab: this week (tap a day), where the plan came from, every day to race day, the whole block. */
 export default function Plan() {
   const router = useRouter();
-  const { week, todayIndex, profile, race, suggestion, setSuggestion, history } = useAppStore();
+  const { week, todayIndex, profile, race, hasRace, plan, suggestion, setSuggestion, history } = useAppStore();
   const [open, setOpen] = useState<number>(todayIndex);
+  const realPlan = plan.length > 0;
 
   const totalMiles = week.reduce((a, d) => a + d.miles, 0);
   const avgKcal = Math.round(week.reduce((a, d) => a + targetsFor(d, profile).kcal, 0) / week.length / 10) * 10;
-  // The saved block for cloud accounts; the canvas sample in local mode.
+  // The saved block for real plans; the canvas sample until one exists.
   const blockMiles = race.block?.miles ?? sampleBlockMiles;
   const blockPhases = race.block?.phases ?? sampleBlockPhases;
   const peakWeek = blockMiles.indexOf(Math.max(...blockMiles)) + 1;
   const taperFrom = blockPhases.indexOf('taper') + 1;
   const last3 = history ? Math.round(history.weeklyMiles.slice(-3).reduce((a, b) => a + b, 0) / 3) : 0;
+  const seed = hasRace && race.block ? seedSummary(race.block.seed, race.distance) : null;
 
   return (
     <Screen ambient="plan">
       <Header
-        eyebrow={`Week ${race.currentWeek} of ${race.totalWeeks} · ${race.phase}`}
+        eyebrow={hasRace ? `Week ${race.currentWeek} of ${race.totalWeeks} · ${race.phase}` : 'No race set'}
         title="Plan"
         right={
           <Pressable onPress={() => setOpen(todayIndex)} style={styles.pillBtn} accessibilityRole="button">
@@ -51,15 +56,16 @@ export default function Plan() {
           const hue = workoutHue[d.type];
           const Icon = ICON[d.type];
           const t = targetsFor(d, profile);
+          const split = fuelBreakdown(d, profile);
           const isOpen = open === i;
           return (
-            <View key={d.dow} style={i > 0 && styles.rowBorder}>
+            <View key={d.iso ?? d.dow} style={i > 0 && styles.rowBorder}>
               <Pressable onPress={() => setOpen(isOpen ? -1 : i)} style={styles.dayRow} accessibilityRole="button" accessibilityState={{ expanded: isOpen }}>
                 <Txt style={{ width: 34, fontFamily: fonts.bold, fontSize: 13, color: i === todayIndex ? hues.accent.text : colors.caption }}>{d.dow}</Txt>
                 <IconCircle icon={Icon} hue={hue} />
-                <Txt style={{ flex: 1, fontFamily: d.type === 'long' ? fonts.extrabold : fonts.bold, fontSize: 15, color: colors.ink }}>
+                <Txt style={{ flex: 1, fontFamily: d.type === 'long' ? fonts.extrabold : fonts.bold, fontSize: 15, color: colors.ink }} numberOfLines={1}>
                   {d.title}
-                  {d.miles ? ` · ${d.miles} mi` : ''}
+                  {d.miles && !/\d/.test(d.title) ? ` · ${d.miles} mi` : ''}
                 </Txt>
                 <Txt style={{ fontFamily: fonts.extrabold, fontSize: 15, color: hues.accent.text }}>{n(t.kcal)}</Txt>
               </Pressable>
@@ -70,7 +76,11 @@ export default function Plan() {
                     <Stat label="Protein" value={`${t.protein} g`} color={hues.teal.text} />
                     <Stat label="Effort" value={d.effort ?? '—'} />
                   </View>
+                  {d.pace ? <Chip label={`${d.pace} /mi`} hue={hue} onTint style={{ alignSelf: 'flex-start' }} /> : null}
                   <Txt v="small" style={{ fontFamily: fonts.medium }}>{d.note}</Txt>
+                  <Txt v="caption" style={{ fontFamily: fonts.semibold }}>
+                    {split.run > 0 ? `${n(split.base)} kcal baseline + ${n(split.run)} for ${d.miles} mi` : `${n(split.base)} kcal baseline · no run`}
+                  </Txt>
                   {d.done ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <IconCircle icon={Check} hue={hue} size={24} iconSize={13} strokeWidth={2.8} />
@@ -92,7 +102,19 @@ export default function Plan() {
         })}
       </Card>
 
-      {suggestion !== 'dismissed' ? (
+      {!hasRace ? <NoRaceNudge /> : null}
+
+      {seed ? (
+        <Card gap={8}>
+          <CardHeader icon={TrendingUp} title={seed.title} hue={hues.teal} link={{ label: 'Edit race', onPress: () => router.push('/(onboarding)/goal') }} />
+          <Txt v="bodyMuted">{seed.body}</Txt>
+        </Card>
+      ) : null}
+
+      {hasRace && realPlan ? <CalendarCard plan={plan} profile={profile} raceDate={race.date} raceName={race.name} /> : null}
+
+      {/* The canvas's sample suggestion only makes sense on the sample week. */}
+      {!realPlan && suggestion !== 'dismissed' ? (
         <Card outline="rgba(34, 179, 166, 0.35)" gap={12}>
           <CardHeader icon={Sparkles} title="Plan suggestion" hue={hues.teal} right={<Chip label="Next week" hue={hues.teal} />} />
           {suggestion === 'open' ? (
@@ -120,18 +142,20 @@ export default function Plan() {
         </Card>
       ) : null}
 
-      <Card gap={12}>
-        <CardHeader icon={Flag} title="Training block" hue={hues.accent} meta={`${race.totalWeeks} weeks · ${race.name.split(' ')[0]}`} />
-        <BlockChart miles={blockMiles} phases={blockPhases} currentWeek={race.currentWeek} />
-        <View style={styles.phaseLabels}>
-          {['Base', 'Build', 'Peak', 'Taper', 'Race'].map((p) => (
-            <Txt key={p} v="micro">{p}</Txt>
-          ))}
-        </View>
-        <Txt v="bodyMuted" style={{ paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-          Peak of {Math.max(...blockMiles)} mi in week {peakWeek}{taperFrom > 0 ? ` · taper from week ${taperFrom}` : ''} · race day {shortDate(race.date)}
-        </Txt>
-      </Card>
+      {hasRace ? (
+        <Card gap={12}>
+          <CardHeader icon={Flag} title="Training block" hue={hues.accent} meta={`${race.totalWeeks} weeks · ${race.name.split(' ')[0] || race.distance}`} />
+          <BlockChart miles={blockMiles} phases={blockPhases} currentWeek={race.currentWeek} />
+          <View style={styles.phaseLabels}>
+            {['Base', 'Build', 'Peak', 'Taper', 'Race'].map((p) => (
+              <Txt key={p} v="micro">{p}</Txt>
+            ))}
+          </View>
+          <Txt v="bodyMuted" style={{ paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+            Peak of {Math.max(...blockMiles)} mi in week {peakWeek}{taperFrom > 0 ? ` · taper from week ${taperFrom}` : ''} · race day {shortDate(race.date)}
+          </Txt>
+        </Card>
+      ) : null}
 
       {history && history.runs > 0 ? (
         <Card gap={12}>

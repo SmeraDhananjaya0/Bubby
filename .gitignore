@@ -33,3 +33,6 @@ supabase/.temp/
 # Vercel CLI link metadata
 .vercel/
 .vercel
+
+# web smoke test output
+.smoke/
