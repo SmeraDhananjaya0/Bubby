@@ -2,6 +2,15 @@
 
 *Approved in chat 2026-09-21. Reference for implementation; the outcome is what matters.*
 
+## Baseline (after `571e730`, 2026-09-20)
+
+Already in `main` from Smera's session: plan builder v1 seeded from Strava history (start volume, first long run,
+easy pace, `PlanSeed` + `seedSummary`), onboarding validation (`lib/validate.ts`, race name field), the whole block in
+the store (`plan`, `rebuildPlan`, `syncToday`), the Plan-tab calendar, fuel v0.1 in both engines, a CDP smoke test.
+This spec now covers only what is still missing: vitals (max / resting HR, level, notes), goal mode, a reference-race
+fitness model driving paces and HR ranges, level-aware ramp caps, the coach brief + intro, HR-based deviation in the
+sync, and Vitest.
+
 ## Why
 
 Plan builder v0 knows only race + goal time + run days, and the coach knows only age/sex/height/weight.
