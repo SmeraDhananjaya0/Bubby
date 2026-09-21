@@ -20,11 +20,18 @@
  *    Fri rest · Sat long · Sun recovery. Fewer run days drop recovery, then Thu, then Wed.
  *  - Quality sessions rotate week to week (800s / 1000s / 1200s, continuous tempo / cruise intervals, hills)
  *    so the block reads like a real plan rather than the same Tuesday twelve times.
- *  - Paces derive from goal pace: easy +75s (or current easy pace, whichever is slower), long = easy −10s,
- *    tempo −20s (marathon) / +5s (half) / +25s (shorter), intervals −50s / −30s / −10s.
+ *  - Paces come from a reference race (typed in, or the best recent Strava effort) via `lib/fitness.ts`;
+ *    without one they derive from goal pace: easy +75s, long = easy −10s, tempo −20s (marathon) / +5s (half) /
+ *    +25s (shorter), intervals −50s / −30s / −10s. Easy is never faster than the runner's everyday pace.
+ *  - Level sets the ramp (8 / 10 / 12 % a week compounding) and scales the peak and the long-run cap.
+ *  - "Just finish" sets race pace from the projection plus 30 s and keeps quality at tempo.
+ *  - With a max HR, every session carries a bpm range for its zone.
  */
-import type { DayPlan, PlanSeed, Profile, Race, RunHistory, WorkoutType } from '@/types';
+import type { DayPlan, Level, PlanSeed, Profile, Race, RunHistory, WorkoutType } from '@/types';
 import { dowOf, isoAdd, localISO, mondayOf } from '@/lib/format';
+import { DIST_MI, describeRace, hrZones, projectTime, referenceRace, trainingPaces, zoneRange, type Paces, type Zones } from '@/lib/fitness';
+
+export { DIST_MI };
 
 export type Phase = 'base' | 'build' | 'peak' | 'taper';
 
@@ -34,8 +41,11 @@ export type PlanSession = {
   title: string;
   type: WorkoutType;
   detail: string;
-  payload: { distanceMi: number; paceTarget?: string; zone?: string; time?: string; fuel?: string; phase: Phase; week: number };
+  payload: { distanceMi: number; paceTarget?: string; zone?: string; time?: string; fuel?: string; hrRange?: string; phase: Phase; week: number };
 };
+
+/** The paces the block is built on (sec / mi), the zones behind the HR ranges, and where they came from. */
+export type PlanPaces = Paces & { zones: Zones | null; source: PlanSeed['paceSource'] };
 
 export type PlanBlock = {
   label: string;
@@ -45,9 +55,8 @@ export type PlanBlock = {
   periodization: { week: number; phase: Phase; miles: number }[];
   sessions: PlanSession[];
   seed: PlanSeed;
+  paces: PlanPaces;
 };
-
-export const DIST_MI: Record<Race['distance'], number> = { '5K': 3.1, '10K': 6.2, Half: 13.1, Marathon: 26.2 };
 
 export function parseGoalSeconds(goalTime: string): number {
   const p = goalTime.split(':').map((x) => Number(x) || 0);
@@ -65,10 +74,10 @@ export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export type PlanInput = {
   userId: string;
-  race: Pick<Race, 'name' | 'distance' | 'date' | 'goalTime'>;
-  profile: Pick<Profile, 'runDaysPerWeek'>;
+  race: Pick<Race, 'name' | 'distance' | 'date' | 'goalTime' | 'mode'>;
+  profile: Pick<Profile, 'runDaysPerWeek' | 'level' | 'maxHr' | 'restingHr' | 'recentRace'>;
   /** What Strava / Apple Health showed for the last 12 weeks, when connected. */
-  history?: Pick<RunHistory, 'runs' | 'weeklyAvg' | 'longestMi' | 'avgPaceSec'> | null;
+  history?: Pick<RunHistory, 'runs' | 'weeklyAvg' | 'longestMi' | 'avgPaceSec' | 'bestEffort'> | null;
   /** ISO date for "today"; defaults to the local date. */
   today?: string;
 };
@@ -78,6 +87,13 @@ const DEFAULTS: Record<Race['distance'], { start: number; peak: number; longStar
   '10K': { start: 12, peak: 25, longStart: 4, longCap: 9, longStep: 0.5, tempoCap: 6 },
   Half: { start: 15, peak: 32, longStart: 6, longCap: 14, longStep: 1, tempoCap: 7 },
   Marathon: { start: 20, peak: 45, longStart: 8, longCap: 20, longStep: 1.5, tempoCap: 8 },
+};
+
+/** How a runner's experience shapes the block: weekly ramp (compounding), and scales on the distance's peak and long-run cap. */
+const LEVEL: Record<Level, { ramp: number; peak: number; longCap: number }> = {
+  new: { ramp: 1.08, peak: 0.85, longCap: -2 },
+  intermediate: { ramp: 1.1, peak: 1, longCap: 0 },
+  advanced: { ramp: 1.12, peak: 1.2, longCap: 2 },
 };
 
 /** True when the history is enough to shape a plan: at least three runs and some volume in the last four weeks. */
@@ -99,15 +115,25 @@ export function buildPlan(input: PlanInput): PlanBlock {
   // --- what we're starting from
   const h = input.history;
   const seeded = canSeed(h);
-  const goal = parseGoalSeconds(input.race.goalTime) / distMi;
-  const estRacePace = seeded && h!.avgPaceSec ? h!.avgPaceSec - RACE_VS_EASY[dist] : null;
+  const lvl = LEVEL[input.profile.level ?? 'intermediate'];
+  const finishMode = input.race.mode === 'finish';
+  // Fitness: a reference race (typed in, or the best recent Strava effort) anchors the paces.
+  const ref = referenceRace(input.profile, h);
+  const tp = ref ? trainingPaces(ref) : null;
+  const goalSec = parseGoalSeconds(input.race.goalTime);
+  const goalFromTime = goalSec / distMi;
+  const estRacePace = tp ? tp.race[dist] : seeded && h!.avgPaceSec ? h!.avgPaceSec - RACE_VS_EASY[dist] : null;
+  // Race pace: the goal time, or — just finishing — what current fitness projects plus a 30 s cushion.
+  const goal = finishMode && estRacePace != null ? estRacePace + 30 : goalFromTime;
   const seed: PlanSeed = {
     source: seeded ? 'history' : 'default',
     runs: h?.runs ?? 0,
     weeklyAvg: h?.weeklyAvg ?? 0,
     longestMi: h?.longestMi ?? 0,
     avgPaceSec: h?.avgPaceSec ?? null,
-    goalGapSec: estRacePace != null ? Math.round(estRacePace - goal) : null,
+    goalGapSec: !finishMode && estRacePace != null ? Math.round(estRacePace - goalFromTime) : null,
+    paceSource: tp ? (ref!.source === 'manual' ? 'race' : 'history') : 'goal',
+    reference: ref,
   };
 
   // --- block length & phases
@@ -126,9 +152,11 @@ export function buildPlan(input: PlanInput): PlanBlock {
   // --- weekly volume: start where the runner is, aim for the distance's peak, never ramp past ~10%/wk,
   //     and never more than the run days can hold (a long run plus ~7 mi per other day).
   const startMiles = Math.round(seeded ? clamp(h!.weeklyAvg, 8, 70) : D.start);
-  const safeCeiling = startMiles * Math.pow(1.1, rampWeeks);
-  const daysCeiling = D.longCap + (runDays - 1) * 7;
-  const peakMiles = Math.round(clamp(Math.max(D.peak, startMiles * 1.15), startMiles, Math.min(safeCeiling, D.peak * 1.35, daysCeiling)));
+  const longCap = Math.max(D.longStart + 1, D.longCap + lvl.longCap);
+  const peakTarget = D.peak * lvl.peak;
+  const safeCeiling = startMiles * Math.pow(lvl.ramp, rampWeeks);
+  const daysCeiling = longCap + (runDays - 1) * 7;
+  const peakMiles = Math.round(clamp(Math.max(peakTarget, startMiles * 1.15), startMiles, Math.min(safeCeiling, peakTarget * 1.35, daysCeiling)));
   const isCutback = (w: number) => w % 4 === 0 && phaseOf(w) !== 'peak' && phaseOf(w) !== 'taper' && w < total;
   const periodization = Array.from({ length: total }, (_, i) => {
     const w = i + 1;
@@ -148,8 +176,8 @@ export function buildPlan(input: PlanInput): PlanBlock {
   //     It grows linearly to the last peak week (never more than a step a week), backs off on cutback
   //     weeks, and once it's already at the cap it alternates so no one runs 20 miles every Saturday.
   const lastBuild = remaining + peakW;
-  const longStart = seeded && h!.longestMi > 0 ? clamp(Math.round(h!.longestMi), D.longStart, Math.min(D.longCap, startMiles * 0.4 + 2)) : D.longStart;
-  const longFinal = Math.max(longStart, Math.min(D.longCap, Math.round(peakMiles * 0.42)));
+  const longStart = seeded && h!.longestMi > 0 ? clamp(Math.round(h!.longestMi), D.longStart, Math.min(longCap, startMiles * 0.4 + 2)) : D.longStart;
+  const longFinal = Math.max(longStart, Math.min(longCap, Math.round(peakMiles * 0.42)));
   const longGrowth = Math.min(D.longStep, (longFinal - longStart) / Math.max(1, lastBuild - 1));
   const longOf = (w: number, weekMiles: number): number => {
     const ph = phaseOf(w);
@@ -158,18 +186,28 @@ export function buildPlan(input: PlanInput): PlanBlock {
       const peakLong: number = longOf(lastBuild, periodization[lastBuild - 1]?.miles ?? weekMiles);
       return Math.round(peakLong * (k === taperW ? 0.4 : k === taperW - 1 ? 0.5 : 0.7));
     }
-    let raw = Math.min(D.longCap, longStart + longGrowth * (w - 1), Math.max(D.longStart, weekMiles * 0.42));
+    let raw = Math.min(longCap, longStart + longGrowth * (w - 1), Math.max(D.longStart, weekMiles * 0.42));
     if (isCutback(w)) raw *= 0.75;
     else if (ph !== 'peak' && raw >= longFinal * 0.9 && w % 2 === 0) raw *= 0.8; // already long: alternate
     return Math.max(D.longStart, Math.round(raw));
   };
 
-  // --- paces (sec / mi)
-  const easyFromGoal = goal + 75;
-  const easy = seeded && h!.avgPaceSec ? Math.max(easyFromGoal, h!.avgPaceSec - 10) : easyFromGoal;
-  const long = easy - 10;
-  const tempo = isMarathon ? goal - 20 : isHalf ? goal + 5 : goal + 25;
-  const intervals = isMarathon ? goal - 50 : isHalf ? goal - 30 : goal - 10;
+  // --- paces (sec / mi): from the reference race when there is one, else from the goal.
+  //     Easy is never faster than the runner's everyday pace; long stays within 10 s of easy.
+  const historyEasy = seeded && h!.avgPaceSec ? h!.avgPaceSec - 10 : null;
+  const easy = Math.max(tp ? tp.easy : goalFromTime + 75, historyEasy ?? 0);
+  const long = tp ? Math.max(tp.long, easy - 10) : easy - 10;
+  const tempo = tp ? tp.tempo : isMarathon ? goalFromTime - 20 : isHalf ? goalFromTime + 5 : goalFromTime + 25;
+  const intervals = tp ? tp.intervals : isMarathon ? goalFromTime - 50 : isHalf ? goalFromTime - 30 : goalFromTime - 10;
+  const recovery = tp ? tp.recovery : easy + 30;
+  const zones = input.profile.maxHr ? hrZones(input.profile.maxHr, input.profile.restingHr) : null;
+  const racePace = (d: Race['distance']) => projectTime(distMi, goalSec, DIST_MI[d]) / DIST_MI[d];
+  const paces: PlanPaces = {
+    recovery, easy, long, tempo, intervals,
+    race: tp ? tp.race : { '5K': racePace('5K'), '10K': racePace('10K'), Half: racePace('Half'), Marathon: racePace('Marathon') },
+    zones,
+    source: seed.paceSource,
+  };
 
   // --- day templates: Mon rest · Tue Q1 · Wed easy · Thu Q2/easy · Fri rest · Sat long · Sun recovery
   const dropOrder: number[] = [6, 3, 2, 1]; // Sun recovery, Thu, Wed, Tue — dropped as run days shrink from 5 → 3
@@ -197,13 +235,18 @@ export function buildPlan(input: PlanInput): PlanBlock {
       const date = isoAdd(monday, dow);
       const id = `${input.userId}-${date}`;
       const base = { id, date, payload: { phase, week } as PlanSession['payload'] };
-      const push = (type: WorkoutType, title: string, detail: string, distanceMi: number, paceTarget?: string, zone?: string, fuel?: string, time = '7:00 AM') =>
-        sessions.push({ ...base, type, title, detail, payload: { ...base.payload, distanceMi, paceTarget, zone, fuel, time } });
+      const push = (type: WorkoutType, title: string, detail: string, distanceMi: number, paceTarget?: string, zone?: string, fuel?: string, time = '7:00 AM') => {
+        // Just finishing: nothing faster than tempo — intervals become a steady tempo of the same length.
+        if (finishMode && type === 'intervals') {
+          type = 'tempo'; title = `Tempo ${distanceMi} mi`; detail = `1 mi easy · ${Math.max(2, distanceMi - 2)} mi at ${fmtPace(tempo)} · 1 mi easy. Steady, not heroic.`; paceTarget = fmtPace(tempo); zone = 'Zone 3–4';
+        }
+        sessions.push({ ...base, type, title, detail, payload: { ...base.payload, distanceMi, paceTarget, zone, fuel, time, hrRange: zoneRange(zone, zones) } });
+      };
       const rest = (why: string) => push('rest', 'Rest', why, 0, undefined, undefined, undefined, undefined);
       const easyRun = (mi: number, title: string, detail: string, zone = 'Zone 2') => push('easy', title, detail, mi, range(easy - 15, easy + 15), zone, 'Water');
 
       if (isRaceWeek && date === input.race.date) {
-        push('long', input.race.name, `Race day. Goal ${input.race.goalTime} at ${fmtPace(goal)} /mi. Trust the taper: easy first miles, fuel from the start.`, distMi, fmtPace(goal), 'Race', distMi >= 13 ? `${gels(distMi)} gels · 60 g/hr` : '30 g carbs pre');
+        push('long', input.race.name, finishMode ? `Race day. Just finish: start easier than feels right and hold about ${fmtPace(goal)} /mi. Fuel from the start.` : `Race day. Goal ${input.race.goalTime} at ${fmtPace(goal)} /mi. Trust the taper: easy first miles, fuel from the start.`, distMi, fmtPace(goal), 'Race', distMi >= 13 ? `${gels(distMi)} gels · 60 g/hr` : '30 g carbs pre');
         continue;
       }
       if (isRaceWeek && date > input.race.date) {
@@ -221,7 +264,7 @@ export function buildPlan(input: PlanInput): PlanBlock {
 
       switch (dow) {
         case 0:
-          if (runDays >= 7 && !isRaceWeek) push('recovery', `Recovery ${round(easyMi * 0.7)} mi`, 'Very easy. Conversational the whole way.', round(easyMi * 0.7), range(easy + 30, easy + 60), 'Zone 1–2', 'Water');
+          if (runDays >= 7 && !isRaceWeek) push('recovery', `Recovery ${round(easyMi * 0.7)} mi`, 'Very easy. Conversational the whole way.', round(easyMi * 0.7), range(recovery, recovery + 30), 'Zone 1–2', 'Water');
           else rest('Mondays are for recovery. Stretch, mobility, sleep.');
           break;
         case 1: {
@@ -268,7 +311,7 @@ export function buildPlan(input: PlanInput): PlanBlock {
           break;
         case 5:
           if (isRaceWeek) easyRun(2, 'Shake-out 2 mi', 'Two easy miles, a few strides. Lay out your kit.', 'Zone 1–2');
-          else if (phase === 'peak' && (isMarathon || isHalf)) {
+          else if (phase === 'peak' && (isMarathon || isHalf) && !finishMode) {
             const gp = Math.round(longMi * (isMarathon ? 0.3 : 0.4));
             push('long', `Long run ${longMi} mi`, `Easy for ${longMi - gp} mi, then the last ${gp} mi at goal pace ${fmtPace(goal)}. Practise race-day breakfast and gels.`, longMi, range(long - 15, long + 15), 'Zone 2–3', `${gels(longMi)} gels · 60 g/hr`);
           } else if (phase === 'build' && variant === 0 && longMi >= 8) {
@@ -277,7 +320,7 @@ export function buildPlan(input: PlanInput): PlanBlock {
           break;
         case 6:
           if (dropped.has(6) || isRaceWeek) rest(isRaceWeek ? 'Rest. Tomorrow is the day.' : 'Rest day.');
-          else push('recovery', `Recovery ${round(easyMi * 0.7)} mi`, 'Legs will be heavy. Slow is the point.', round(easyMi * 0.7), range(easy + 30, easy + 60), 'Zone 1', 'Water');
+          else push('recovery', `Recovery ${round(easyMi * 0.7)} mi`, 'Legs will be heavy. Slow is the point.', round(easyMi * 0.7), range(recovery, recovery + 30), 'Zone 1', 'Water');
           break;
       }
     }
@@ -292,6 +335,7 @@ export function buildPlan(input: PlanInput): PlanBlock {
     periodization,
     sessions,
     seed,
+    paces,
   };
 }
 
@@ -309,6 +353,7 @@ export function toDayPlan(s: PlanSession): DayPlan {
     miles: p.distanceMi ?? 0,
     pace: p.paceTarget,
     effort: p.zone,
+    hrRange: p.hrRange,
     note: s.detail,
     fuel: p.fuel,
     time: p.time,
@@ -339,10 +384,15 @@ export function blockWeekOf(firstIso: string, totalWeeks: number, today = localI
 
 /** Plain-English summary of what the plan was built from, for the preview and the Plan tab. */
 export function seedSummary(seed: PlanSeed | undefined, distance: Race['distance']) {
+  const paceNote = !seed
+    ? ''
+    : seed.paceSource === 'race' && seed.reference ? ` Paces come from your ${describeRace(seed.reference)}.`
+    : seed.paceSource === 'history' && seed.reference ? ` Paces come from your fastest recent run, a ${describeRace(seed.reference)}.`
+    : ' Paces come from your goal time.';
   if (!seed || seed.source !== 'history') {
     return {
       title: 'Built from the defaults',
-      body: `No synced runs to go on, so this ${distance === 'Half' ? 'half marathon' : distance} block starts from a conservative base. Connect Strava and it re-seeds from your real mileage.`,
+      body: `No synced runs to go on, so this ${distance === 'Half' ? 'half marathon' : distance} block starts from a conservative base. Connect Strava and it re-seeds from your real mileage.${paceNote}`,
     };
   }
   const pace = seed.avgPaceSec ? ` at ${fmtPace(seed.avgPaceSec)} /mi` : '';
@@ -355,6 +405,6 @@ export function seedSummary(seed: PlanSeed | undefined, distance: Race['distance
     : ' Your goal lines up with your recent running.';
   return {
     title: 'Built from your Strava history',
-    body: `${seed.runs} runs in the last 12 weeks: ${seed.weeklyAvg} mi/wk on average${pace}, longest ${seed.longestMi} mi. That set your starting volume, first long run and easy pace.${goalNote}`,
+    body: `${seed.runs} runs in the last 12 weeks: ${seed.weeklyAvg} mi/wk on average${pace}, longest ${seed.longestMi} mi. That set your starting volume and first long run.${paceNote}${goalNote}`,
   };
 }

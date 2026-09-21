@@ -45,6 +45,21 @@ export function projectedFinish(ref: RecentRace, distance: Race['distance']): nu
   return projectTime(ref.distanceMi, ref.seconds, DIST_MI[distance]);
 }
 
+const pad = (n: number) => String(n).padStart(2, '0');
+/** Seconds → "50:00" or "3:45:00". */
+export const fmtClock = (sec: number) => {
+  const s = Math.round(sec);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  return h > 0 ? `${h}:${pad(m)}:${pad(r)}` : `${m}:${pad(r)}`;
+};
+
+/** "10K in 50:00", "half marathon in 1:55:00", "5.0 mi in 41:30". */
+export function describeRace(ref: RecentRace) {
+  const name = (Object.keys(DIST_MI) as Race['distance'][]).find((d) => Math.abs(DIST_MI[d] - ref.distanceMi) < 0.05);
+  const label = name === 'Half' ? 'half marathon' : name === 'Marathon' ? 'marathon' : name ?? `${ref.distanceMi} mi`;
+  return `${label} in ${fmtClock(ref.seconds)}`;
+}
+
 export type Zone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5';
 export type Zones = Record<Zone, [number, number]>;
 

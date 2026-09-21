@@ -14,6 +14,8 @@ export type DayPlan = {
   /** Pace range as shown, e.g. "9:15–9:45". */
   pace?: string;
   effort?: string;
+  /** Heart-rate range for the effort, e.g. "124–143 bpm", when max HR is known. */
+  hrRange?: string;
   /** Short coaching note shown when the day is expanded. */
   note: string;
   /** Fueling hint for the run itself. */
@@ -66,8 +68,11 @@ export type PlanSeed = {
   longestMi: number;
   avgPaceSec: number | null;
   runs: number;
-  /** Goal pace minus the race pace recent runs suggest, in s/mi. Positive = the goal is faster than current fitness. */
+  /** Goal pace minus the race pace recent runs suggest, in s/mi. Positive = the goal is faster than current fitness. Null when just finishing. */
   goalGapSec: number | null;
+  /** `race`: a race the runner typed in · `history`: the best recent Strava effort · `goal`: nothing to go on but the goal time. */
+  paceSource: 'race' | 'history' | 'goal';
+  reference: RecentRace | null;
 };
 
 /** What the run history (Strava) says about the last 12 weeks. */
