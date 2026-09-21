@@ -11,7 +11,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { hues } from '@/theme/tokens';
 
 /** Sample stand-in for local mode and Apple Health (which has no sync yet). */
-const SAMPLE: RunHistory = { runs: sampleStravaStats.runsSynced, weeklyMiles: sampleHistoryMiles, weeklyAvg: sampleStravaStats.weeklyAvg, longestMi: 12, maxHr: sampleStravaStats.maxHr, avgPaceSec: 8 * 60 + 40 };
+const SAMPLE: RunHistory = { runs: sampleStravaStats.runsSynced, weeklyMiles: sampleHistoryMiles, weeklyAvg: sampleStravaStats.weeklyAvg, longestMi: 12, maxHr: sampleStravaStats.maxHr, avgPaceSec: 8 * 60 + 40, bestEffort: { distanceMi: 6.2, seconds: 50 * 60, source: 'strava' } };
 
 export default function Connected() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function Connected() {
     let alive = true;
     loadHistory(userId)
       .then((h) => { if (alive) { setHistory(h); storeHistory(h); } })
-      .catch(() => alive && setHistory({ ...SAMPLE, runs: 0, weeklyMiles: Array(12).fill(0), weeklyAvg: 0, longestMi: 0, maxHr: null, avgPaceSec: null }));
+      .catch(() => alive && setHistory({ ...SAMPLE, runs: 0, weeklyMiles: Array(12).fill(0), weeklyAvg: 0, longestMi: 0, maxHr: null, avgPaceSec: null, bestEffort: null }));
     return () => { alive = false; };
   }, [userId, via, storeHistory]);
 

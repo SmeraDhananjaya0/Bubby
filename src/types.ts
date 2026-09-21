@@ -81,6 +81,8 @@ export type RunHistory = {
   maxHr: number | null;
   /** Distance-weighted average pace over the last four weeks, sec / mi. */
   avgPaceSec: number | null;
+  /** The fastest run of at least 3 mi in the last eight weeks — the reference race when none was typed in. */
+  bestEffort: RecentRace | null;
 };
 
 export type Level = 'new' | 'intermediate' | 'advanced';

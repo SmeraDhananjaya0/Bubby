@@ -240,7 +240,7 @@ export async function loadHistory(userId: string, weeks = 12): Promise<RunHistor
   const monday = new Date(today + 'T00:00:00');
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - (weeks - 1) * 7);
   const since = monday.toLocaleDateString('en-CA');
-  const { data } = await supabase.from('activities').select('started_at, distance_m, moving_sec, max_hr').eq('user_id', userId).eq('sport', 'run').gte('started_at', since);
+  const { data } = await supabase.from('activities').select('started_at, distance_m, moving_sec, max_hr, avg_pace_sec_per_mi').eq('user_id', userId).eq('sport', 'run').gte('started_at', since);
   const acts = data ?? [];
   const weeklyMiles = Array(weeks).fill(0) as number[];
   let maxHr: number | null = null;
@@ -257,6 +257,10 @@ export async function loadHistory(userId: string, weeks = 12): Promise<RunHistor
   const recent = acts.filter((a) => new Date(a.started_at).getTime() >= Date.now() - 28 * 86400000);
   const recentMi = recent.reduce((t, a) => t + (a.distance_m ?? 0) / 1609.344, 0);
   const recentSec = recent.reduce((t, a) => t + (a.moving_sec ?? 0), 0);
+  // Best effort: the fastest run of ≥ 3 mi in the last eight weeks stands in for a race the runner never typed in.
+  const best = acts
+    .filter((a) => (a.distance_m ?? 0) >= 3 * 1609.344 && a.avg_pace_sec_per_mi && a.moving_sec && new Date(a.started_at).getTime() >= Date.now() - 56 * 86400000)
+    .sort((a, b) => Number(a.avg_pace_sec_per_mi) - Number(b.avg_pace_sec_per_mi))[0];
   return {
     runs: acts.length,
     weeklyMiles: weeklyMiles.map((m) => Math.round(m * 10) / 10),
@@ -264,6 +268,7 @@ export async function loadHistory(userId: string, weeks = 12): Promise<RunHistor
     longestMi: Math.round(longest * 10) / 10,
     maxHr,
     avgPaceSec: recentMi > 0 ? Math.round(recentSec / recentMi) : null,
+    bestEffort: best ? { distanceMi: Math.round(((best.distance_m ?? 0) / 1609.344) * 10) / 10, seconds: best.moving_sec ?? 0, date: todayISO(new Date(best.started_at)), source: 'strava' } : null,
   };
 }
 
