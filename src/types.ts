@@ -57,7 +57,19 @@ export type Race = {
   currentWeek: number;
   phase: string;
   /** The saved block: weekly miles + phase, oldest first, and what the builder was seeded from. */
-  block?: { miles: number[]; phases: Array<'base' | 'build' | 'peak' | 'taper'>; seed?: PlanSeed };
+  block?: { miles: number[]; phases: Array<'base' | 'build' | 'peak' | 'taper'>; seed?: PlanSeed; paces?: PlanPaces };
+};
+
+/** The paces a block is built on (sec / mi), the HR zones behind its bpm ranges, and where they came from. */
+export type PlanPaces = {
+  recovery: number;
+  easy: number;
+  long: number;
+  tempo: number;
+  intervals: number;
+  race: Record<Race['distance'], number>;
+  zones: Record<'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5', [number, number]> | null;
+  source: 'race' | 'history' | 'goal';
 };
 
 /** What the plan builder started from — shown on the plan so the runner can see it came from their history. */

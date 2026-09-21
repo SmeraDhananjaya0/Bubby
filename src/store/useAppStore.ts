@@ -235,7 +235,7 @@ export const useAppStore = create<State & Actions>()(
           totalWeeks: built.total_weeks,
           currentWeek: built.week,
           phase: capitalize(built.phase),
-          block: { miles: built.periodization.map((p) => p.miles), phases: built.periodization.map((p) => p.phase), seed: built.seed },
+          block: { miles: built.periodization.map((p) => p.miles), phases: built.periodization.map((p) => p.phase), seed: built.seed, paces: built.paces },
         };
         set({ plan, week, todayIndex, todayDone: false, race, coachApplied: false });
         if (!cloud(s)) return;

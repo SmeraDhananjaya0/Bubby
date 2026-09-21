@@ -27,9 +27,9 @@
  *  - "Just finish" sets race pace from the projection plus 30 s and keeps quality at tempo.
  *  - With a max HR, every session carries a bpm range for its zone.
  */
-import type { DayPlan, Level, PlanSeed, Profile, Race, RunHistory, WorkoutType } from '@/types';
+import type { DayPlan, Level, PlanPaces, PlanSeed, Profile, Race, RunHistory, WorkoutType } from '@/types';
 import { dowOf, isoAdd, localISO, mondayOf } from '@/lib/format';
-import { DIST_MI, describeRace, hrZones, projectTime, referenceRace, trainingPaces, zoneRange, type Paces, type Zones } from '@/lib/fitness';
+import { DIST_MI, describeRace, hrZones, projectTime, referenceRace, trainingPaces, zoneRange } from '@/lib/fitness';
 
 export { DIST_MI };
 
@@ -44,8 +44,7 @@ export type PlanSession = {
   payload: { distanceMi: number; paceTarget?: string; zone?: string; time?: string; fuel?: string; hrRange?: string; phase: Phase; week: number };
 };
 
-/** The paces the block is built on (sec / mi), the zones behind the HR ranges, and where they came from. */
-export type PlanPaces = Paces & { zones: Zones | null; source: PlanSeed['paceSource'] };
+export type { PlanPaces };
 
 export type PlanBlock = {
   label: string;

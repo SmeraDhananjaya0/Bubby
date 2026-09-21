@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Flag, Leaf, TrendingUp } from 'lucide-react-native';
 import { BackButton, BlockChart, Button, Card, CardHeader, Screen, Stat, StepIndicator, Txt } from '@/components';
+import { PacesCard } from '@/features/plan/PacesCard';
 import { useAppStore } from '@/store/useAppStore';
 import { shortDate } from '@/lib/format';
 import { buildPlan, seedSummary } from '@/lib/plan';
@@ -62,6 +63,8 @@ export default function PlanPreview() {
               <Txt v="bodyMuted">{seed.body}</Txt>
             </Card>
           ) : null}
+
+          <PacesCard paces={plan.paces} reference={plan.seed.reference} />
         </>
       ) : (
         <Card gap={8}>

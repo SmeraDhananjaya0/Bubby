@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Activity, Check, ChevronRight, Flag, Moon, Sparkles, TrendingUp, Zap } from 'lucide-react-native';
 import { BlockChart, Button, Card, CardHeader, Chip, Header, HistoryBars, IconCircle, Screen, Stat, Txt } from '@/components';
+import { PacesCard } from '@/features/plan/PacesCard';
 import { useAppStore } from '@/store/useAppStore';
 import { fuelBreakdown, targetsFor } from '@/lib/fuel';
 import { n, shortDate } from '@/lib/format';
@@ -156,6 +157,8 @@ export default function Plan() {
           </Txt>
         </Card>
       ) : null}
+
+      {race.block?.paces ? <PacesCard paces={race.block.paces} reference={race.block.seed?.reference} /> : null}
 
       {history && history.runs > 0 ? (
         <Card gap={12}>

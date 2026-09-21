@@ -8,7 +8,7 @@
 import { callFunction, supabase } from '@/lib/supabase';
 import { targetsFor } from '@/lib/fuel';
 import type { Tables, TablesInsert } from '@/lib/database.types';
-import type { DayPlan, Level, Macros, Meal, PlanChange, PlanSeed, Profile, Race, RecentRace, RunHistory, WorkoutType } from '@/types';
+import type { DayPlan, Level, Macros, Meal, PlanChange, PlanPaces, PlanSeed, Profile, Race, RecentRace, RunHistory, WorkoutType } from '@/types';
 import { buildPlan, type PlanBlock } from '@/lib/plan';
 
 const TZ = 'America/New_York';
@@ -86,6 +86,7 @@ export async function loadRace(userId: string): Promise<Race | null> {
             miles: (block.periodization as { miles: number }[]).map((p) => Number(p.miles)),
             phases: (block.periodization as { phase: NonNullable<Race['block']>['phases'][number] }[]).map((p) => p.phase),
             seed: ((block.payload ?? {}) as { seed?: PlanSeed }).seed,
+            paces: ((block.payload ?? {}) as { paces?: PlanPaces }).paces,
           },
         }
       : {}),
@@ -142,7 +143,7 @@ export async function savePlan(userId: string, race: Race, profile: Profile, his
     week: plan.week,
     total_weeks: plan.total_weeks,
     periodization: plan.periodization,
-    payload: { goalId: `${userId}-goal`, engine: 'plan-v1', seed: plan.seed },
+    payload: { goalId: `${userId}-goal`, engine: 'plan-v1', seed: plan.seed, paces: plan.paces },
   });
   await supabase.from('blocks').delete().eq('user_id', userId).neq('id', `${userId}-block`);
   return plan;
