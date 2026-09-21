@@ -33,6 +33,8 @@ const waitFor = async (needle, ms = 15000) => { const t0 = Date.now(); while (Da
 const rectOf = (finder) => evalJs(`(() => { const el = (${finder})(); if (!el) return null; el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, disabled: el.getAttribute('aria-disabled') }; })()`);
 const clickAt = async (r) => { await cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: r.x, y: r.y }); await cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: r.x, y: r.y, button: 'left', clickCount: 1 }); await cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: r.x, y: r.y, button: 'left', clickCount: 1 }); await sleep(400); };
 const byLabel = (label) => `() => document.querySelector('[aria-label="${label}"]')`;
+// The distance tiles are radios; the fitness card lower down repeats the same words as segments, so pick by role.
+const byRadio = (t) => `() => [...document.querySelectorAll('[role="radio"]')].find(e => e.textContent.trim().startsWith(${JSON.stringify(t)}))`;
 const byText = (t) => `() => [...document.querySelectorAll('div,span')].filter(e => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(t)}).pop()`;
 const click = async (finder, what) => { await sleep(150); const r = await rectOf(finder); if (!r) throw new Error('not found: ' + what); await clickAt(r); };
 const type = async (label, value) => evalJs(`(() => { const el = document.querySelector('input[aria-label="${label}"]'); if (!el) return 'missing ' + ${JSON.stringify(label)}; el.focus(); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event('input', { bubbles: true })); return el.value; })()`);
@@ -62,7 +64,7 @@ try {
   console.log('goal'); await waitFor('Your goal');
   assert((await disabledOf('Build my plan')) === 'true', 'Build disabled with no race name');
   await type('Race name', 'Brooklyn Half');
-  await click(byText('Half'), 'Half tile');
+  await click(byRadio('Half'), 'Half tile');
   await type('Race date, year month day', `${new Date().getFullYear()}-02-30`); await sleep(200);
   assert((await text()).includes("That isn't a real date"), 'bad date flagged');
   assert((await disabledOf('Build my plan')) === 'true', 'Build disabled with bad date');
