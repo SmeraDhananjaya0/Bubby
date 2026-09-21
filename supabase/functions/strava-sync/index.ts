@@ -31,6 +31,13 @@ async function seal(plain: string) {
   return { ciphertext: b64(out.slice(0, -16)), tag: b64(out.slice(-16)), iv: b64(iv) };
 }
 
+// ---- HR zones (mirror of src/lib/fitness.ts: % of max, or Karvonen on heart-rate reserve when resting HR is known) ----
+const BANDS = { Z1: [0.5, 0.65], Z2: [0.65, 0.75], Z3: [0.75, 0.82], Z4: [0.82, 0.9], Z5: [0.9, 1] } as const;
+function zoneFloor(maxHr: number, restingHr: number | null | undefined, zone: keyof typeof BANDS) {
+  const rest = restingHr ?? 0;
+  return Math.round(rest + BANDS[zone][0] * (maxHr - rest));
+}
+
 // ---- fuel engine v0.1 (kept in step with src/lib/fuel.ts) ----
 // baseline = Mifflin-St Jeor × 1.35 (daily living, no running); run cost = weight_lb × kcal/lb/mi × miles.
 type WT = 'easy' | 'recovery' | 'intervals' | 'tempo' | 'long' | 'rest';
@@ -135,7 +142,12 @@ Deno.serve(async (req) => {
       const slowEnd = paceTarget.split(/[–-]/).pop()?.trim();
       const slowSec = slowEnd && slowEnd.includes(':') ? Number(slowEnd.split(':')[0]) * 60 + Number(slowEnd.split(':')[1]) : null;
       const tooFar = planned > 0 && miles >= planned * 1.4;
-      const tooHard = plannedType === 'easy' && slowSec && row.avg_pace_sec_per_mi && row.avg_pace_sec_per_mi < slowSec * 0.75;
+      // Too hard: with a max HR on file, an easy or recovery day run at zone 3 or above; otherwise an easy
+      // day run ≥ 25% faster than the slow end of its pace target.
+      const z3 = profile?.max_hr ? zoneFloor(Number(profile.max_hr), profile.resting_hr, 'Z3') : null;
+      const byHr = !!(z3 && row.avg_hr);
+      const easyDay = plannedType === 'easy' || plannedType === 'recovery';
+      const tooHard = easyDay && (byHr ? Number(row.avg_hr) >= z3! : !!(slowSec && row.avg_pace_sec_per_mi && row.avg_pace_sec_per_mi < slowSec * 0.75));
       if (session.status !== 'done') await admin.from('planned_sessions').update({ status: 'done' }).eq('user_id', userId).eq('id', session.id);
 
       if (tooFar || tooHard) {
@@ -152,13 +164,13 @@ Deno.serve(async (req) => {
               headline: `${a.name ?? 'Run'} · ${miles.toFixed(1)} mi`,
               planned: `${session.title} · ${planned} mi`,
               avg_hr: row.avg_hr, added: { kcal: after.kcal - before.kcal, carbs_g: after.carbs_g - before.carbs_g, sodium_mg: after.sodium_mg - before.sodium_mg },
-              reason: tooHard ? 'Ran an easy day hard, so today fuels like a workout.' : 'Ran well past the plan, so today fuels the extra distance.',
+              reason: tooHard ? (byHr ? 'Easy day, but your heart rate says workout — today fuels like one.' : 'Ran an easy day hard, so today fuels like a workout.') : 'Ran well past the plan, so today fuels the extra distance.',
             },
           });
           proposals.push(id);
         }
         if (day === dayOf(new Date())) {
-          await admin.from('daily_targets').upsert({ user_id: userId, day, ...after, session_id: session.id, reason: tooHard ? 'Easy day run at tempo effort' : 'Ran past the planned distance', engine_version: 'v0' });
+          await admin.from('daily_targets').upsert({ user_id: userId, day, ...after, session_id: session.id, reason: tooHard ? (byHr ? 'Easy day run in zone 3 or above' : 'Easy day run at tempo effort') : 'Ran past the planned distance', engine_version: 'v0' });
         }
       }
     }
