@@ -11,6 +11,7 @@ export const sampleRace: Race = {
   miles: 26.2,
   date: '2026-12-06',
   goalTime: '3:45:00',
+  mode: 'time',
   totalWeeks: 11,
   currentWeek: 6,
   phase: 'Build',
@@ -23,6 +24,7 @@ export const sampleProfile: Profile = {
   weightLb: 160,
   diet: '',
   runDaysPerWeek: 5,
+  level: 'intermediate',
 };
 
 /** Monday-first week. Saturday (index 5) is "today" in the sample. */

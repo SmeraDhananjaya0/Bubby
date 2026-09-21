@@ -49,6 +49,8 @@ export type Race = {
   date: string;
   /** "3:45:00" */
   goalTime: string;
+  /** `time`: chasing the goal time. `finish`: just get round; paces come from current fitness. */
+  mode: 'time' | 'finish';
   totalWeeks: number;
   currentWeek: number;
   phase: string;
@@ -81,6 +83,11 @@ export type RunHistory = {
   avgPaceSec: number | null;
 };
 
+export type Level = 'new' | 'intermediate' | 'advanced';
+
+/** A race or time trial that says what the runner can do today. */
+export type RecentRace = { distanceMi: number; seconds: number; date?: string; source: 'manual' | 'strava' };
+
 export type Profile = {
   age: number;
   sex: 'Female' | 'Male' | 'Other' | '';
@@ -88,6 +95,13 @@ export type Profile = {
   weightLb: number;
   diet: string;
   runDaysPerWeek: number;
+  /** Heart-rate ceiling for zones: Strava's max seen, or 220 − age. */
+  maxHr?: number;
+  restingHr?: number;
+  level?: Level;
+  recentRace?: RecentRace;
+  /** Free text for the coach: injuries, schedule, constraints. */
+  notes?: string;
 };
 
 export type ChatRole = 'coach' | 'you';

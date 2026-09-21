@@ -8,7 +8,7 @@
 import { callFunction, supabase } from '@/lib/supabase';
 import { targetsFor } from '@/lib/fuel';
 import type { Tables, TablesInsert } from '@/lib/database.types';
-import type { DayPlan, Macros, Meal, PlanChange, PlanSeed, Profile, Race, RunHistory, WorkoutType } from '@/types';
+import type { DayPlan, Level, Macros, Meal, PlanChange, PlanSeed, Profile, Race, RecentRace, RunHistory, WorkoutType } from '@/types';
 import { buildPlan, type PlanBlock } from '@/lib/plan';
 
 const TZ = 'America/New_York';
@@ -24,6 +24,11 @@ export function rowToProfile(r: Tables<'profiles'>): Profile {
     weightLb: Number(r.weight_lb ?? 160),
     diet: r.diet ?? '',
     runDaysPerWeek: r.run_days_per_week ?? 5,
+    maxHr: r.max_hr ?? undefined,
+    restingHr: r.resting_hr ?? undefined,
+    level: (r.level as Level | null) ?? undefined,
+    recentRace: (r.recent_race as RecentRace | null) ?? undefined,
+    notes: r.notes ?? undefined,
   };
 }
 
@@ -40,6 +45,11 @@ export async function saveProfile(userId: string, p: Partial<Profile>, extra: { 
   if (p.weightLb != null) patch.weight_lb = p.weightLb;
   if (p.diet != null) patch.diet = p.diet;
   if (p.runDaysPerWeek != null) patch.run_days_per_week = p.runDaysPerWeek;
+  if (p.maxHr != null) patch.max_hr = p.maxHr;
+  if (p.restingHr != null) patch.resting_hr = p.restingHr;
+  if (p.level != null) patch.level = p.level;
+  if (p.recentRace != null) patch.recent_race = p.recentRace;
+  if (p.notes != null) patch.notes = p.notes;
   if (extra.onboarded) patch.onboarded_at = new Date().toISOString();
   await supabase.from('profiles').update(patch).eq('id', userId);
 }
@@ -66,6 +76,7 @@ export async function loadRace(userId: string): Promise<Race | null> {
     miles: DIST_MILES[distance],
     date: goal.date,
     goalTime: h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`,
+    mode: (goal.mode as Race['mode'] | null) ?? 'time',
     totalWeeks: block?.total_weeks ?? 11,
     currentWeek: block?.week ?? 1,
     phase: block?.phase ? block.phase[0] + block.phase.slice(1).toLowerCase() : 'Base',
@@ -90,6 +101,7 @@ export async function saveRace(userId: string, race: Race) {
     name: race.name,
     date: race.date,
     target_seconds,
+    mode: race.mode,
     payload: { distance: race.distance },
   });
   // One goal per account: drop anything that isn't the row above.
