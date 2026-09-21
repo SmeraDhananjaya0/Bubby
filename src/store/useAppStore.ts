@@ -68,7 +68,7 @@ type State = UserData & {
 };
 
 type Actions = {
-  completeOnboarding: () => void;
+  completeOnboarding: () => Promise<void>;
   setHasRace: (v: boolean) => void;
   setRace: (patch: Partial<Race>) => void;
   setProfile: (patch: Partial<Profile>) => void;
@@ -78,7 +78,7 @@ type Actions = {
    * Build the block from the current race + profile + history and replace the plan (and, in cloud
    * mode, the saved sessions). Called at the end of onboarding and whenever the race or run days change.
    */
-  rebuildPlan: () => void;
+  rebuildPlan: () => Promise<void>;
   /** Re-cut this week from the plan when the date has rolled over (call on app open / foreground). */
   syncToday: () => void;
 
@@ -207,11 +207,19 @@ export const useAppStore = create<State & Actions>()(
     (set, get) => ({
       ...initial,
 
-      completeOnboarding: () => {
+      completeOnboarding: async () => {
         set({ onboarded: true });
-        get().rebuildPlan();
+        await get().rebuildPlan();
         const s = get();
-        if (cloud(s)) swallow(repo.saveProfile(s.userId!, s.profile, { onboarded: true }));
+        if (!cloud(s)) return;
+        await swallow(repo.saveProfile(s.userId!, s.profile, { onboarded: true }));
+        // The coach opens with the plan in hand. If the call fails, the seed greeting stays.
+        try {
+          const { reply } = await repo.coachIntro();
+          if (reply) set({ chat: [{ id: `intro-${Date.now()}`, role: 'coach', at: Date.now(), text: reply }] });
+        } catch (e) {
+          console.warn('[bubbie] coach intro failed', e);
+        }
       },
       setHasRace: (hasRace) => set({ hasRace }),
       // Edits are committed by the goal screen's Save, which calls rebuildPlan() — not on every keystroke.
@@ -222,10 +230,9 @@ export const useAppStore = create<State & Actions>()(
         const s = get();
         if (!s.hasRace) {
           set({ plan: [], week: sampleWeek, todayIndex: sampleTodayIndex, todayDone: false, race: { ...s.race, block: undefined } });
-          if (cloud(s)) swallow(repo.clearRace(s.userId!));
-          return;
+          return cloud(s) ? swallow(repo.clearRace(s.userId!)).then(() => undefined) : Promise.resolve();
         }
-        if (validateRaceDate(s.race.date)) return; // never build from a bad date — the goal screen blocks this
+        if (validateRaceDate(s.race.date)) return Promise.resolve(); // never build from a bad date — the goal screen blocks this
         const built = buildPlan({ userId: s.userId ?? s.activeUid ?? 'local', race: s.race, profile: s.profile, history: s.history });
         const plan = built.sessions.map(toDayPlan);
         const { week, todayIndex } = weekFromPlan(plan);
@@ -238,16 +245,17 @@ export const useAppStore = create<State & Actions>()(
           block: { miles: built.periodization.map((p) => p.miles), phases: built.periodization.map((p) => p.phase), seed: built.seed, paces: built.paces },
         };
         set({ plan, week, todayIndex, todayDone: false, race, coachApplied: false });
-        if (!cloud(s)) return;
+        if (!cloud(s)) return Promise.resolve();
         const uid = s.userId!;
-        swallow(
+        // Resolves once the cloud has the plan (or the write failed and was logged), so callers can build on it.
+        return swallow(
           (async () => {
             await repo.saveRace(uid, race);
             await repo.savePlan(uid, race, s.profile, s.history);
             const [wk, cloudPlan] = await Promise.all([repo.loadWeek(uid), repo.loadPlan(uid)]);
             set({ week: wk.week, todayIndex: wk.todayIndex, plan: cloudPlan.length ? cloudPlan : plan });
           })(),
-        );
+        ).then(() => undefined);
       },
 
       syncToday: () => {

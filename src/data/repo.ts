@@ -367,6 +367,9 @@ export async function askCoach(message: string): Promise<CoachReply> {
   return { ...out, proposals: out.proposals.map((p) => ({ ...p, day: p.day })) };
 }
 
+/** The coach's opening message right after onboarding (persisted server-side as the first coach turn). */
+export const coachIntro = () => callFunction<{ reply: string }>('coach', { intro: true });
+
 export const syncStrava = () => callFunction<{ synced: number; matched: number; proposals: string[] }>('strava-sync');
 export const connectStrava = (code: string, redirect_uri: string) => callFunction<{ athlete: { id: number; firstname: string } }>('strava-auth', { code, redirect_uri });
 export const connectedProviders = async () => (await supabase.rpc('connected_providers')).data ?? [];
