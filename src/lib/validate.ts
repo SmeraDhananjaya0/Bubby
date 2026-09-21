@@ -59,4 +59,6 @@ export const validateProfile = {
   age: (v: number) => (v >= 13 && v <= 100 ? null : 'Enter an age between 13 and 100.'),
   heightIn: (v: number) => (v >= 48 && v <= 90 ? null : 'Enter a height between 4 ft and 7 ft 6.'),
   weightLb: (v: number) => (v >= 60 && v <= 450 ? null : 'Enter a weight between 60 and 450 lb.'),
+  maxHr: (v: number) => (v >= 100 && v <= 230 ? null : 'Max heart rate is usually between 100 and 230.'),
+  restingHr: (v: number) => (v >= 30 && v <= 120 ? null : 'Resting heart rate is usually between 30 and 120.'),
 };
