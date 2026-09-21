@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AlertCircle, Flag, Minus, Plus } from 'lucide-react-native';
-import { BackButton, Button, Card, Screen, StepIndicator, Txt } from '@/components';
+import { Flag, Minus, Plus } from 'lucide-react-native';
+import { BackButton, Button, Card, Screen, SegmentedControl, StepIndicator, Txt } from '@/components';
+import { FieldError } from '@/features/onboarding/Fields';
+import { FitnessCard } from '@/features/onboarding/FitnessCard';
 import { useAppStore } from '@/store/useAppStore';
 import { paceFor, shortDate, weeksUntil } from '@/lib/format';
+import { fmtClock, projectedFinish, referenceRace } from '@/lib/fitness';
 import { formatDateInput, formatTimeInput, validateGoalTime, validateRaceDate, validateRaceName } from '@/lib/validate';
 import { colors, fonts, hues, shadows } from '@/theme/tokens';
 import type { Race } from '@/types';
@@ -16,16 +19,6 @@ const DISTANCES: { key: Race['distance']; miles: number; goal: string }[] = [
   { key: 'Marathon', miles: 26.2, goal: '4:00:00' },
 ];
 
-function FieldError({ text }: { text: string | null }) {
-  if (!text) return null;
-  return (
-    <View style={styles.error} accessibilityLiveRegion="polite">
-      <AlertCircle size={13} color={hues.amber.text} strokeWidth={2.4} />
-      <Txt style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, color: hues.amber.text }}>{text}</Txt>
-    </View>
-  );
-}
-
 /**
  * Step 3: the goal race. Also the "Add a race" / "Edit race" screen once onboarded: the same fields,
  * but Save rebuilds the plan and returns to wherever you came from. Continue is disabled until the
@@ -33,13 +26,24 @@ function FieldError({ text }: { text: string | null }) {
  */
 export default function Goal() {
   const router = useRouter();
-  const { race, profile, onboarded, hasRace, setRace, setProfile, setHasRace, rebuildPlan } = useAppStore();
+  const { race, profile, history, onboarded, hasRace, setRace, setProfile, setHasRace, rebuildPlan } = useAppStore();
   const days = profile.runDaysPerWeek;
   const editing = onboarded;
+  const ref = referenceRace(profile, history);
+  const finish = race.mode === 'finish';
+
+  // Just finishing: the "goal time" is what current fitness projects plus a 30 s/mi cushion, so the
+  // rest of the app still has a time to show. Falls back to the distance default with nothing to go on.
+  useEffect(() => {
+    if (!finish) return;
+    const t = ref ? fmtClock(projectedFinish(ref, race.distance) + 30 * race.miles) : DISTANCES.find((d) => d.key === race.distance)!.goal;
+    if (t !== race.goalTime) setRace({ goalTime: t });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finish, race.distance, ref?.distanceMi, ref?.seconds]);
 
   const errors = useMemo(
-    () => ({ name: validateRaceName(race.name), date: validateRaceDate(race.date), time: validateGoalTime(race.goalTime, race.miles) }),
-    [race.name, race.date, race.goalTime, race.miles],
+    () => ({ name: validateRaceName(race.name), date: validateRaceDate(race.date), time: finish ? null : validateGoalTime(race.goalTime, race.miles) }),
+    [race.name, race.date, race.goalTime, race.miles, finish],
   );
   const valid = !errors.name && !errors.date && !errors.time;
   const weeks = weeksUntil(race.date);
@@ -119,6 +123,11 @@ export default function Goal() {
           </View>
           {errors.date ? <FieldError text={errors.date} /> : <Txt v="caption" style={{ textAlign: 'right' }}>{shortDate(race.date)}{weeks ? ` · ${weeks} weeks out` : ''}</Txt>}
         </View>
+        <View style={styles.row}>
+          <Txt style={styles.label}>Going for</Txt>
+          <SegmentedControl compact options={[{ key: 'time', label: 'A time' }, { key: 'finish', label: 'Just finish' }]} value={race.mode} onChange={(mode) => setRace({ mode })} />
+        </View>
+        {finish ? null : (
         <View style={[styles.row, { flexDirection: 'column', alignItems: 'stretch', gap: 6 }]}>
           <View style={styles.between}>
             <Txt style={styles.label}>Goal time</Txt>
@@ -134,6 +143,7 @@ export default function Goal() {
           </View>
           <FieldError text={errors.time} />
         </View>
+        )}
         <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 12 }]}>
           <Txt style={styles.label}>Run days per week</Txt>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -148,12 +158,18 @@ export default function Goal() {
         </View>
       </Card>
 
+      <FitnessCard profile={profile} history={history} distance={race.distance} onChange={(recentRace) => setProfile({ recentRace })} />
+
       <View style={styles.note}>
         <Flag size={16} color={hues.accent.text} strokeWidth={2.2} />
         <Txt style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: hues.accent.text }}>
           {valid
-            ? `${weeks} ${weeks === 1 ? 'week' : 'weeks'} out at ${days} runs a week. Your goal pace works out to ${paceFor(race.goalTime, race.miles)} /mi.`
-            : 'Fill in the race name, a future date and a goal time to build your plan.'}
+            ? finish
+              ? `${weeks} ${weeks === 1 ? 'week' : 'weeks'} out at ${days} runs a week. Just finishing — paces come from your current fitness; expect about ${race.goalTime}.`
+              : `${weeks} ${weeks === 1 ? 'week' : 'weeks'} out at ${days} runs a week. Your goal pace works out to ${paceFor(race.goalTime, race.miles)} /mi.`
+            : finish
+              ? 'Fill in the race name and a future date to build your plan.'
+              : 'Fill in the race name, a future date and a goal time to build your plan.'}
         </Txt>
       </View>
 
@@ -176,7 +192,6 @@ const styles = StyleSheet.create({
   label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink2, flexShrink: 0 },
   input: { flex: 1, minWidth: 150, textAlign: 'right', fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink, padding: 0 },
   textField: { height: 44, paddingHorizontal: 14, borderRadius: 13, backgroundColor: colors.field, fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
-  error: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   stepBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.field, alignItems: 'center', justifyContent: 'center' },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: hues.accent.tint },
 });
