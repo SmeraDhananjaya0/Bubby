@@ -22,6 +22,7 @@ writing code. `design/DESIGN.md` is the visual spec; `design/canvas/` holds the 
 npm install
 npx expo start          # then i / a / w   (no .env → local mode with sample data)
 npm run typecheck       # tsc --noEmit — must pass before every commit
+npm test                # Vitest on the pure engines (lib/fitness.ts, lib/plan.ts)
 npm run build:web       # static export to dist/ (what Vercel runs)
 npm run smoke:web       # build + drive onboarding in headless Chrome (scripts/smoke/); needs Google Chrome installed
 npm run build:ios:sim   # EAS dev-client build for the simulator
@@ -52,6 +53,8 @@ src/
   theme/tokens.ts             # colors, hues, radii, spacing, shadows, type scale, ambient presets  ← the design system
   components/                 # Screen, Header, Card, Button, Chip, Stat, Bar, Rings, WeekBars, BlockChart, TrendChart, …
   features/today/             # the cards that compose the home screen
+  features/onboarding/        # Fields (NumberField, FieldError, form styles), FitnessCard (the reference race)
+  features/auth/              # CodeSignIn: pick a runner, enter a personal code
   features/plan/              # CalendarCard: every day of the block on a month grid
   store/useAppStore.ts        # app state + selectors (persist, per-account snapshots, cloud write-through)
   store/useAuthStore.ts       # who is signed in (User); cloud accounts carry `cloudId`
@@ -62,7 +65,8 @@ src/
   lib/useAuth.ts              # Supabase session ↔ useAuthStore/useAppStore; sendCode / verifyCode / signInWithGoogle
   lib/google.ts               # expo-auth-session Google (local mode only; cloud uses Supabase OAuth)
   lib/coach.ts                # local rule-based coach — the fallback when the coach function isn't reachable
-  lib/plan.ts                 # plan builder v1: goal + profile + run history → periodized block of daily sessions (pure)
+  lib/plan.ts                 # plan builder v1: goal + profile + run history + fitness → periodized block of daily sessions (pure)
+  lib/fitness.ts              # reference race → Riegel projection, training paces, HR zones (pure; zone bands mirrored in strava-sync)
   lib/validate.ts             # race date / goal time / name / profile validation + input formatting (onboarding blocks on these)
   lib/strava.ts               # Strava OAuth: auth-session on native, full-page redirect → app/strava.tsx on web
   lib/storage.ts              # AsyncStorage adapter for zustand persist
@@ -103,7 +107,7 @@ design/
 7. **Real controls.** `Pressable`/`TextInput` with `accessibilityRole` and labels on icon-only buttons.
    Touch targets ≥ 44px.
 8. **Numbers come from the engine.** Anything shown as a *target* (kcal, carbs, protein, fat, protocol)
-   must come from `lib/fuel.ts`. A day's calories are always `baselineKcal(profile)` (Mifflin-St Jeor × 1.35)
+   must come from `lib/fuel.ts`; paces and heart-rate ranges come from `lib/fitness.ts` via `lib/plan.ts`. A day's calories are always `baselineKcal(profile)` (Mifflin-St Jeor × 1.35)
    plus `runKcal(profile, type, miles)` (~0.63 kcal per lb per mile, more for hard sessions) — `fuelBreakdown()`
    gives both halves for "why" copy. Sample *logged* data lives in `data/sample.ts` until real logging exists.
 
@@ -176,7 +180,8 @@ web export + Vercel config · custom foods + search on Log · Settings.
 4. **Scheduled sync + pushes** — nightly `strava-sync` per user (pg_cron/net or Supabase cron), morning recap
    (`recap.tsx`) and post-run `plan-updated` as pushes (`expo-notifications`).
 5. **Fuel engine v1** — replace the per-mile constants with HR-load–based fitness/fatigue (the "Training model"
-   box in `design/product-flow.pdf`); keep targets explainable (the coach should be able to say *why*).
+   box in `design/product-flow.pdf`); keep targets explainable (the coach should be able to say *why*). HR zones
+   already exist (`lib/fitness.ts`, mirrored in `strava-sync`, which judges easy days by zone) — build the load model on them.
    Every proposal + outcome is already logged in `proposals` — that's the eval set.
 6. **Food search / photo logging** — the search field and camera button on Log are wired to nothing yet.
 7. **Tests** — `npm run smoke:web` drives onboarding → Today → Plan → edit on the export over raw CDP (no Playwright);
